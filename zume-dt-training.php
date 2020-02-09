@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Disciple Tools Extension - Admin Page
+ * Plugin Name: Zume - Disciple Tools Training Extension
  * Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension
  * Description: One page extension of Disciple Tools
  * Version:  0.1.0
@@ -19,9 +19,9 @@
 /**
  * PLEASE, RENAME CLASS AND FUNCTION NAMES BEFORE USING TEMPLATE
  * Rename these three strings:
- *      Admin Page
- *      Admin_Page
- *      admin_page
+ *      Zume Training Extension
+ *      Zume_DT_Training
+ *      zume_dt_training
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly
@@ -38,8 +38,8 @@ add_action( 'after_setup_theme', function (){
         if ( ! is_multisite() ) {
             add_action('admin_notices', function () {
                 ?>
-                <div class="notice notice-error notice-admin_page is-dismissible" data-notice="admin_page">Disciple
-                    Tools Theme not active or not latest version for Admin Page plugin.
+                <div class="notice notice-error notice-zume_dt_training is-dismissible" data-notice="zume_dt_training">Disciple
+                    Tools Theme not active or not latest version for Zume Training Extension plugin.
                 </div><?php
             });
         }
@@ -56,20 +56,20 @@ add_action( 'after_setup_theme', function (){
      * Don't load the plugin on every rest request. Only those with the 'sample' namespace
      */
     $is_rest = dt_is_rest();
-    if ( !$is_rest || strpos( dt_get_url_path(), 'sample' ) != false ){
-        return Admin_Page::instance();
+    if ( !$is_rest || strpos( dt_get_url_path(), 'zume' ) != false ){
+        return Zume_DT_Training::instance();
     }
     return false;
 } );
 
 
 /**
- * Class Admin_Page
+ * Class Zume_DT_Training
  */
-class Admin_Page {
+class Zume_DT_Training {
 
-    public $token = 'admin_page';
-    public $title = 'Admin Page';
+    public $token = 'zume_dt_training';
+    public $title = 'Zúme Training Extension';
     public $permissions = 'manage_dt';
 
     /**  Singleton */
@@ -86,6 +86,7 @@ class Admin_Page {
      * @since   0.1.0
      */
     public function __construct() {
+        require_once ('tile.php' );
 
         if ( is_admin() ) {
             add_action( "admin_menu", [ $this, "register_menu" ] );
@@ -263,5 +264,5 @@ class Admin_Page {
 }
 
 // Register activation hook.
-register_activation_hook( __FILE__, [ 'Admin_Page', 'activation' ] );
-register_deactivation_hook( __FILE__, [ 'Admin_Page', 'deactivation' ] );
+register_activation_hook( __FILE__, [ 'Zume_DT_Training', 'activation' ] );
+register_deactivation_hook( __FILE__, [ 'Zume_DT_Training', 'deactivation' ] );
