@@ -56,11 +56,12 @@ add_action( 'after_setup_theme', function (){
      * Don't load the plugin on every rest request. Only those with the 'sample' namespace
      */
     $is_rest = dt_is_rest();
-    if ( !$is_rest || strpos( dt_get_url_path(), 'zume' ) != false ){
+    if ( !$is_rest || strpos( dt_get_url_path(), 'trainings' ) != false ){
         return Zume_DT_Training::instance();
     }
     return false;
-} );
+
+}, 150 );
 
 
 /**

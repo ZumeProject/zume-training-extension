@@ -1,19 +1,35 @@
 <?php
 
-class DT_Zume_Hooks_Groups {
+class DT_Zume_Hooks_Training {
 
-    public function group_detail_box( $section ) {
+    public function training_detail_box( $section ) {
         global $post;
+        $zume_group_id = get_post_meta( $post->ID, 'zume_group_id', true );
 
-        if ( $section == 'zume_group_details' ) :
-//            DT_Zume_Core::check_for_update( $post->ID, 'group' );
-            $record = get_post_meta( $post->ID, 'zume_raw_record', true );
-
+        // does not group id
+        if ( $section === 'zume_training_details' && ! $zume_group_id ) :
+            $post_type = get_post_type();
+            $post_settings = apply_filters( "dt_get_post_type_settings", [], $post_type );
+            $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
             ?>
-            <label class="section-header"><?php esc_html_e( 'Zúme Info' ) ?></label>
+            <label class="section-header"><?php esc_html_e( 'Zúme.Training Site Activity' ) ?></label>
+
+            <?php render_field_for_display( 'zume_group_id', $post_settings["fields"], $dt_post ) ?>
+
+            <?php
+        endif;
+
+        // has group it
+        if ( $section === 'zume_training_details' && $zume_group_id ) :
+            $record = $this->get_zume_group( $zume_group_id );
+            ?>
+            <label class="section-header"><?php esc_html_e( 'Zúme.Training Site Activity' ) ?></label>
 
             <style>
                 #zume-tabs li a { padding: 1rem 1rem; }
+                .date-text {
+                    font-size:.8em;
+                }
             </style>
 
             <ul class="tabs" data-tabs id="zume-tabs">
@@ -28,11 +44,6 @@ class DT_Zume_Hooks_Groups {
             <div class="tabs-content" data-tabs-content="zume-tabs">
             <!-- Sessions Tab -->
             <div class="tabs-panel is-active" id="sessions">
-                <style>
-                    .date-text {
-                        font-size:.8em;
-                    }
-                </style>
                 <?php
                 if ( $record ) { ?>
 
@@ -128,7 +139,7 @@ class DT_Zume_Hooks_Groups {
                     <?php endif; ?>
 
                     <?php if ( isset( $record['last_modified_date'] ) && ! empty( $record['last_modified_date'] ) ) :
-                        $mdy = DateTime::createFromFormat( 'Y-m-d H:i:s', $record['last_modified_date'] )->format( 'm/d/Y' );
+                        $mdy = date('m/d/Y', strtotime( $record['last_modified_date'] ) );
                         ?>
                         <dt>
                             <?php esc_html_e( 'Last Active' ) ?>:
@@ -148,58 +159,12 @@ class DT_Zume_Hooks_Groups {
                         </dd>
                     <?php endif; ?>
 
-
-
                 </dl>
 
             </div>
 
             <!-- Map Tab-->
-            <div class="tabs-panel" id="map">
-                <?php
-                $raw_location = [];
-                $show = true;
-                if ( isset( $record['raw_location'] ) && ! empty( $record['raw_location'] ) ) {
-                    $raw_location = $record['raw_location'];
-                    $source = 'from user';
-                } elseif ( isset( $record['ip_raw_location'] ) && ! empty( $record['ip_raw_location'] ) ) {
-                    $raw_location = $record['ip_raw_location'];
-                    $source = 'from ip address';
-                } else {
-                    $show = false;
-                }
-
-                if ( $show ) {
-                    $lat = Disciple_Tools_Google_Geocode_API::parse_raw_result( $raw_location, 'lat' );
-                    $lng = Disciple_Tools_Google_Geocode_API::parse_raw_result( $raw_location, 'lng' );
-                    $address = Disciple_Tools_Google_Geocode_API::parse_raw_result( $raw_location, 'formatted_address' );
-
-                    if ( empty( $lng ) || empty( $lat ) ) :
-                        echo '<p>' . esc_html__( 'No map info gathered.' ) . '</p>';
-                    else :
-                        ?>
-
-                        <p><?php echo esc_html( $address ) ?> <span
-                                class="text-small grey">( <?php echo esc_html( $source ) ?> )</span></p>
-                        <a id="map-reveal" data-open="<?php echo esc_attr( md5( $address ?? 'none' ) ) ?>"><img
-                                src="https://maps.googleapis.com/maps/api/staticmap?center=<?php echo esc_attr( $lat ) . ',' . esc_attr( $lng ) ?>&zoom=6&size=640x640&scale=1&markers=color:red|<?php echo esc_attr( $lat ) . ',' . esc_attr( $lng ) ?>&key=<?php echo esc_attr( Disciple_Tools_Google_Geocode_API::key() ); ?>"/></a>
-                        <p class="center"><a
-                                data-open="<?php echo esc_attr( md5( $address ?? 'none' ) ) ?>"><?php esc_html_e( 'click to show large map' ) ?></a>
-                        </p>
-
-                        <div class="reveal large" id="<?php echo esc_attr( md5( $address ?? 'none' ) ) ?>"
-                             data-reveal>
-                            <img src="https://maps.googleapis.com/maps/api/staticmap?center=<?php echo esc_attr( $lat ) . ',' . esc_attr( $lng ) ?>&zoom=5&size=640x550&scale=2&markers=color:red|<?php echo esc_attr( $lat ) . ',' . esc_attr( $lng ) ?>&key=<?php echo esc_attr( Disciple_Tools_Google_Geocode_API::key() ); ?>"/>
-                            <button class="close-button" data-close aria-label="Close modal" type="button">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-
-                    <?php
-                    endif;
-                }
-                ?>
-            </div>
+            <div class="tabs-panel" id="map"></div>
             <br clear="all" />
 
             <!-- Raw Tab-->
@@ -213,82 +178,67 @@ class DT_Zume_Hooks_Groups {
                 }
                 ?>
             </div>
-        <?php endif; ?>
+             <?php endif; ?>
+            </div>
 
-        <?php
-        endif;
+        <?php endif;
 
     }
 
-    public function groups_filter_box( $sections, $post_type = '' ) {
-        if ($post_type === "groups") {
+    public function trainings_filter_box( $sections, $post_type = '' ) {
+        if ($post_type === "trainings") {
             global $post;
-//            if ( $post && get_post_meta( $post->ID, 'zume_raw_record', true ) ) {
             if ( $post ) {
-                $sections[] = 'zume_group_details';
+                $sections[] = 'zume_training_details';
             }
         }
         return $sections;
     }
 
     public function register_fields( $fields, $post_type ) {
-        if ( 'groups' === $post_type ) {
-            $fields["zume_last_check"] = [
-                "name" => 'Zume Last Check Field',
-                "type" => "text",
-                "default" => '',
-                "hidden" => true,
+        if ( 'trainings' === $post_type ) {
+            $fields['zume_group_id'] = [
+                'name' => "Group ID",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false
             ];
-            $fields["zume_raw_record"] = [
-                "name" => 'Zume Raw Record Field',
-                "type" => "text",
-                "default" => '',
-                "hidden" => true,
-            ];
-            $fields["zume_check_sum"] = [
-                "name" => 'Zume Check Sum Field',
-                "type" => "text",
-                "default" => '',
-                "hidden" => true,
-            ];
-            $fields["health_metrics"]["customizable"] = 'all';
-        }
-        if ( 'contacts' === $post_type ){
-            $fields["seeker_path"]["customizable"] = 'all';
-            $fields["milestones"]["customizable"] = 'all';
         }
         return $fields;
     }
 
     /**
-     * This removes unnecissary zume data from the get_groups call loaded into the wpApiGroupsSettings javascript object
+     * @param $zume_group_id
+     * @return bool|array
+     */
+    public function get_zume_group( $zume_group_id ) {
+        global $wpdb;
+        $results = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
+        if ( $results ) {
+            $results = maybe_unserialize( $results );
+            return $results;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * This removes unnecissary zume data from the get_trainings call loaded into the wpApiGroupsSettings javascript object
      * @param $fields
      *
      * @return mixed
      */
     public function remove_zume_from_post_array( $fields ) {
-        if ( isset( $fields['zume_last_check'] ) ) {
-            unset( $fields['zume_last_check'] );
-        }
-        if ( isset( $fields['zume_raw_record'] ) ) {
-            unset( $fields['zume_raw_record'] );
-        }
-        if ( isset( $fields['zume_check_sum'] ) ) {
-            unset( $fields['zume_check_sum'] );
-        }
-        if ( isset( $fields['zume_foreign_key'] ) ) {
-            unset( $fields['zume_foreign_key'] );
-        }
         return $fields;
     }
 
     public function __construct() {
 
-        add_action( 'dt_details_additional_section', [ $this, 'group_detail_box' ] );
-        add_filter( 'dt_details_additional_section_ids', [ $this, 'groups_filter_box' ], 999, 2 );
+        add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
+        add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
         add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
-        add_filter( 'dt_groups_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
+        add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
 
     }
 }
-new DT_Zume_Hooks_Groups();
+new DT_Zume_Hooks_Training();
