@@ -21,9 +21,12 @@ class DT_Zume_Hooks_Training {
 
         // has group it
         if ( $section === 'zume_training_details' && $zume_group_id ) :
-            $record = $this->get_zume_group( $zume_group_id );
+            $post_type = get_post_type();
+            $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
+            $record = $this->get_zume_group( $zume_group_id, $dt_post );
+//            dt_write_log($record);
             ?>
-            <label class="section-header"><?php esc_html_e( 'Zúme.Training Site Activity' ) ?></label>
+            <label class="section-header"><?php esc_html_e( 'Zúme.Training Course' ) ?></label>
 
             <style>
                 #zume-tabs li a { padding: 1rem 1rem; }
@@ -34,8 +37,8 @@ class DT_Zume_Hooks_Training {
 
             <ul class="tabs" data-tabs id="zume-tabs">
                 <li class="tabs-title is-active"><a href="#sessions" aria-selected="true"><?php esc_html_e( 'Sessions' ) ?></a></li>
+                <li class="tabs-title"><a href="#members" data-tabs-target="members"><?php esc_html_e( 'Members' ) ?></a></li>
                 <li class="tabs-title"><a href="#info" data-tabs-target="info"><?php esc_html_e( 'Info' ) ?></a></li>
-                <li class="tabs-title"><a href="#map" data-tabs-target="map"><?php esc_html_e( 'Map' ) ?></a></li>
                 <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
                     <li class="tabs-title"><a data-tabs-target="raw" href="#raw"><?php esc_html_e( 'Raw' ) ?></a></li>
                 <?php endif; ?>
@@ -91,6 +94,22 @@ class DT_Zume_Hooks_Training {
 
                 <?php } // endif ?>
             </div>
+
+            <!-- Members Tab-->
+            <div class="tabs-panel" id="members" style="height: 375px;">
+                <?php
+                if ( ! empty( $record['coleaders'] ) ) {
+                    ?>
+                    <div class="grid-x">
+                    <?php foreach ( $record['coleaders'] as $coleader ) : ?>
+                        <div class="cell"><?php echo esc_html( $coleader ) ?><br><button class="button hollow small" disabled>Create Contact</button></div>
+                    <?php endforeach; ?>
+                    </div>
+                    <?php
+                }
+                ?>
+            </div>
+            <br clear="all" />
 
             <!-- Info box -->
             <div class="tabs-panel" id="info" style="min-height: 375px;">
@@ -163,10 +182,6 @@ class DT_Zume_Hooks_Training {
 
             </div>
 
-            <!-- Map Tab-->
-            <div class="tabs-panel" id="map"></div>
-            <br clear="all" />
-
             <!-- Raw Tab-->
             <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
             <div class="tabs-panel" id="raw" style="width: 100%;height: 300px;overflow-y: scroll;overflow-x:hidden;">
@@ -203,6 +218,13 @@ class DT_Zume_Hooks_Training {
                 'default' => '',
                 'show_in_table' => false
             ];
+            $fields['zume_check_sum'] = [
+                'name' => "Zume Group Check Sum",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false
+            ];
+
         }
         return $fields;
     }
@@ -211,11 +233,41 @@ class DT_Zume_Hooks_Training {
      * @param $zume_group_id
      * @return bool|array
      */
-    public function get_zume_group( $zume_group_id ) {
+    public function get_zume_group( $zume_group_id, $dt_post ) {
         global $wpdb;
-        $results = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
-        if ( $results ) {
-            $results = maybe_unserialize( $results );
+        $raw_results = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
+        if ( $raw_results ) {
+            $results = maybe_unserialize( $raw_results );
+//            dt_write_log($dt_post);
+            dt_write_log($results);
+
+
+//            if ( ! isset( $dt_post['zume_check_sum'] ) || $dt_post['zume_check_sum'] !== hash('sha256', maybe_serialize( $raw_results ) ) ) {
+                // process training details with DT record
+
+                if ( $dt_post['title'] === '' /* test if it has a title */) {
+                    $my_post = array(
+                        'ID'           => $dt_post['ID'],
+                        'post_title'   => $results['title'],
+                    );
+                    wp_update_post( $my_post );
+                }
+                if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
+                    update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
+                }
+                if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
+                    update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
+                }
+                if ( false /* @todo test if all dates are logged */) {
+                    dt_write_log('Need to update date list');
+                }
+                if ( true /* @todo test if address match */) {
+                    dt_write_log('Need to update address');
+                }
+
+                update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
+//            }
+
             return $results;
         } else {
             return false;
