@@ -88,11 +88,47 @@ class Zume_DT_Training {
      */
     public function __construct() {
         require_once ('tile.php' );
+        require_once ('rest-api.php' );
+
+        add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
 
         if ( is_admin() ) {
             add_action( "admin_menu", [ $this, "register_menu" ] );
         }
     } // End __construct()
+
+    public function scripts() {
+        if ( function_exists( 'dt_get_url_path') ) {
+
+            $url_path = dt_get_url_path();
+
+            // trainings post type
+
+            if ( strpos( $url_path, 'trainings' ) !== false ){
+                $post_array = [];
+                if ( is_single() ) {
+                    $post_array = DT_Posts::get_post( get_post_type(), get_the_ID() );
+                }
+
+                wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . '/zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
+                wp_localize_script(
+                    "zume-training", "zumeTraining", array(
+                        "training" => $post_array,
+                        "translations" => array(
+                            "cancel" => esc_html__( 'Cancel', 'zume' ),
+                            "current:" => esc_html__( 'Current Step:', 'zume' ),
+                            "pagination" => esc_html__( 'Cancel', 'zume' ),
+                            "finish" => esc_html__( 'Finish', 'zume' ),
+                            "next" => esc_html__( 'Next', 'zume' ),
+                            "previous" => esc_html__( 'Previous', 'zume' ),
+                            "loading" => esc_html__( 'Loading...', 'zume' ),
+                        )
+                    )
+                );
+            }
+
+        }
+    }
 
 
     /**
@@ -198,9 +234,7 @@ class Zume_DT_Training {
      * @access public
      * @return void
      */
-    public static function activation() {
-
-    }
+    public static function activation() {}
 
     /**
      * Method that runs only when the plugin is deactivated.
@@ -209,9 +243,7 @@ class Zume_DT_Training {
      * @access public
      * @return void
      */
-    public static function deactivation() {
-
-    }
+    public static function deactivation() {}
 
     /**
      * Magic method to output a string if trying to use the object as a string.
@@ -261,6 +293,11 @@ class Zume_DT_Training {
         _doing_it_wrong( __FUNCTION__, esc_html('Whoah, partner!'), '0.1' );
         unset( $method, $args );
         return null;
+    }
+
+    public static function get_meta( $post_id ) {
+        return array_map( function ( $a ) { return maybe_unserialize( $a[0] );
+        }, get_post_meta( $post_id ) );
     }
 }
 
