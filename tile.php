@@ -264,19 +264,22 @@ class DT_Zume_Hooks_Training {
                 'name' => "Zúme Public Key",
                 'type' => 'text',
                 'default' => '',
-                'show_in_table' => false
+                'show_in_table' => false,
+                'hidden' => true
             ];
             $fields['zume_group_id'] = [
                 'name' => "Group ID",
                 'type' => 'text',
                 'default' => '',
-                'show_in_table' => false
+                'show_in_table' => false,
+                'hidden' => true
             ];
             $fields['zume_check_sum'] = [
                 'name' => "Zume Group Check Sum",
                 'type' => 'text',
                 'default' => '',
-                'show_in_table' => false
+                'show_in_table' => false,
+                'hidden' => true
             ];
         }
         return $fields;
