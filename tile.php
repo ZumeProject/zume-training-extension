@@ -46,7 +46,6 @@ class DT_Zume_Hooks_Training {
         $post_settings = apply_filters( "dt_get_post_type_settings", [], $post_type );
         $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
         ?>
-        <label class="section-header"><?php esc_html_e( 'Link a Zúme Training Group' ) ?></label>
 
         <?php if ( get_post_meta( $post->ID, 'zume_public_key', true ) ) : ?>
             <p>This current key was not found in connection to a Zúme Training group. Check again.</p>
@@ -279,7 +278,6 @@ class DT_Zume_Hooks_Training {
                 'default' => '',
                 'show_in_table' => false
             ];
-
         }
         return $fields;
     }
@@ -294,9 +292,7 @@ class DT_Zume_Hooks_Training {
         if ( $raw_results ) {
             $results = maybe_unserialize( $raw_results );
 
-
-            if ( ! isset( $dt_post['zume_check_sum'] ) || $dt_post['zume_check_sum'] !== hash('sha256', maybe_serialize( $raw_results ) ) ) { // @todo turn back on
-                // process training details with DT record
+//            if ( ! isset( $dt_post['zume_check_sum'] ) || $dt_post['zume_check_sum'] !== hash('sha256', maybe_serialize( $raw_results ) ) ) {
 
                 if ( $dt_post['title'] === '' /* test if it has a title */) {
                     $my_post = array(
@@ -311,6 +307,9 @@ class DT_Zume_Hooks_Training {
                 if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
                     update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
                 }
+                if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
+                    update_post_meta( $dt_post['ID'], 'leader_count', 1 );
+                }
                 if ( false /* @todo test if all dates are logged */) {
                     dt_write_log('Need to update date list');
                 }
@@ -319,7 +318,7 @@ class DT_Zume_Hooks_Training {
                 }
 
                 update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
-            }
+//            }
 
             return $results;
         } else {
@@ -334,20 +333,17 @@ class DT_Zume_Hooks_Training {
      * @return mixed
      */
     public function remove_zume_from_post_array( $fields ) {
+        if ( isset( $fields['zume_check_sum'] ) ) {
+            unset( $fields['zume_check_sum'] );
+        }
         return $fields;
     }
 
-
-
-
     public function __construct() {
-
         add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
         add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
         add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
         add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
-
-
     }
 }
 new DT_Zume_Hooks_Training();
