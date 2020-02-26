@@ -1,6 +1,6 @@
 <?php
 
-class DT_Zume_Hooks_Training {
+class Zume_DT_Training_Hook {
 
     public function training_detail_box( $section ) {
 
@@ -349,4 +349,4 @@ class DT_Zume_Hooks_Training {
         add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
     }
 }
-new DT_Zume_Hooks_Training();
+new Zume_DT_Training_Hook();
