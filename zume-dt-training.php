@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Zume - Disciple Tools Training Extension
+ * Plugin Name: Zúme - Disciple Tools Training Extension
  * Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension
- * Description: One page extension of Disciple Tools
+ * Description: One page extension of Disciple Tools Training plugin to include Zúme specific training data.
  * Version:  0.1.0
  * Author URI: https://github.com/DiscipleTools
  * GitHub Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension

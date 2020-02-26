@@ -1,4 +1,4 @@
-# Zume - Disciple Tools Training Extension
-This plugin adds customization to the Disciple Tools Training plugin.
+# Zúme - Disciple Tools Training Extension
+This plugin extends customization to the Disciple Tools Training plugin.
 
 
