@@ -155,6 +155,8 @@ class Zume_DT_Training {
             wp_die( 'You do not have sufficient permissions to access this page.' );
         }
 
+        $this->process_postback();
+
         ?>
         <div class="wrap">
             <h2><?php echo esc_html( $this->title ) ?></h2>
@@ -212,12 +214,16 @@ class Zume_DT_Training {
         <!-- Box -->
         <table class="widefat striped">
             <thead>
-            <tr><th>Information</th></tr>
+            <tr><th>Resync</th></tr>
             </thead>
             <tbody>
             <tr>
                 <td>
-                    Content
+                    Resync Zúme Training Groups to Global Network Training Groups<br><br>
+                    <form method="post">
+                        <?php wp_nonce_field() ?>
+                        <button type="submit" class="button large" name="resync" value="true">Resync</button>
+                    </form>
                 </td>
             </tr>
             </tbody>
@@ -225,6 +231,50 @@ class Zume_DT_Training {
         <br>
         <!-- End Box -->
         <?php
+    }
+
+    public function process_postback() {
+        // check for valid nonce
+        if ( ! ( isset( $_POST['_wpnonce'] )
+            && isset( $_POST['_wp_http_referer'] )
+            && '/wp-admin/admin.php?page=zume_dt_training' === sanitize_text_field( wp_unslash( $_POST['_wp_http_referer'] ) )
+            && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) ) ) )
+        {
+            return false;
+        }
+
+        // check for resync request
+        if ( isset( $_POST['resync'] ) ) {
+            dt_write_log('resync');
+            $this->resync_zume_and_global();
+        }
+
+        dt_write_log($_POST);
+        return true;
+    }
+
+    public function resync_zume_and_global() {
+        global $wpdb;
+        // get list of groups in training
+        $groups_in_zt = $wpdb->get_col("SELECT meta_key FROM $wpdb->usermeta WHERE meta_key LIKE 'zume_group%'" );
+
+        // get list of groups in global
+        $trainings_in_global = $wpdb->get_col( "SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'zume_group_id'" );
+        $trainings = [];
+        foreach( $trainings_in_global as $value ) {
+            $trainings[$value] = true;
+        }
+
+
+        // compare list
+        foreach( $groups_in_zt as $item ) {
+            if ( !isset( $trainings[$item] ) ) {
+                // @todo add function to sync zt group to create a new global training
+                dt_write_log($item . ': no');
+            }
+        }
+
+        // loop create trainings for any missing
     }
 
     /**
