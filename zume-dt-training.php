@@ -192,28 +192,6 @@ class Zume_DT_Training {
         <!-- Box -->
         <table class="widefat striped">
             <thead>
-            <tr>
-                <th>Header</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr>
-                <td>
-                    Content
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <br>
-        <!-- End Box -->
-        <?php
-    }
-
-    public function right_column() {
-        ?>
-        <!-- Box -->
-        <table class="widefat striped">
-            <thead>
             <tr><th>Resync</th></tr>
             </thead>
             <tbody>
@@ -230,6 +208,12 @@ class Zume_DT_Training {
         </table>
         <br>
         <!-- End Box -->
+        <?php
+    }
+
+    public function right_column() {
+        ?>
+
         <?php
     }
 
@@ -265,16 +249,50 @@ class Zume_DT_Training {
             $trainings[$value] = true;
         }
 
+        $count = [
+            "total" => 0,
+            "transfer_needed" => 0,
+            "transferred" => 0,
+            "transfer_names" => []
+        ];
+        $count['total'] = count($groups_in_zt);
 
         // compare list
+        $i = 0;
         foreach( $groups_in_zt as $item ) {
             if ( !isset( $trainings[$item] ) ) {
-                // @todo add function to sync zt group to create a new global training
-                dt_write_log($item . ': no');
+                $count['transfer_needed']++;
+                if ( $i > 100 ) { // set limit on number of records per sync. keep from timing out.
+                    continue;
+                }
+                $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s", $item ) );
+                $group = maybe_unserialize( $group );
+
+                // create training
+                $fields = [
+                    "title" => $group['group_name'],
+                    "zume_group_id" => $group['key'],
+                    "contact_count" => $group['members'],
+                    "leader_count" => 1,
+                    "start_date" => strtotime( $group['created_date'] ),
+                    "status" => "in_progress",
+                ];
+                DT_Posts::create_post( 'trainings', $fields, true, false );
+
+                $count['transferred']++;
+                $count['transfer_names'][] = $group['group_name'];
+                $i++;
             }
         }
 
-        // loop create trainings for any missing
+        dt_write_log('Resync Transfer');
+        dt_write_log($count);
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p>Total Groups: <?php echo $count['total'] ?>| Transfers Still Needed: <?php echo $count['transfer_needed'] ?> | Transfers Completed: <?php echo $count['transferred'] ?></p>
+        </div>
+        <?php
+
     }
 
     /**
