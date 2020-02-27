@@ -192,15 +192,33 @@ class Zume_DT_Training {
         <!-- Box -->
         <table class="widefat striped">
             <thead>
-            <tr><th>Resync</th></tr>
+            <tr><th>Resync Zúme Training Groups to Global Network Training Groups</th></tr>
             </thead>
             <tbody>
             <tr>
                 <td>
-                    Resync Zúme Training Groups to Global Network Training Groups<br><br>
                     <form method="post">
                         <?php wp_nonce_field() ?>
-                        <button type="submit" class="button large" name="resync" value="true">Resync</button>
+                        <button type="submit" class="button large" name="resync" value="true">Resync Zúme.Training to Global.Zúme</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <br>
+        <!-- End Box -->
+
+        <!-- Box -->
+        <table class="widefat striped">
+            <thead>
+            <tr><th>Close Inactive Zúme.Training Groups</th></tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <form method="post">
+                        <?php wp_nonce_field() ?>
+                        <button type="submit" class="button large" name="close_inactive" value="true">Close Inactive Zùme Training Groups</button>
                     </form>
                 </td>
             </tr>
@@ -212,9 +230,7 @@ class Zume_DT_Training {
     }
 
     public function right_column() {
-        ?>
-
-        <?php
+        ?><?php
     }
 
     public function process_postback() {
@@ -233,17 +249,33 @@ class Zume_DT_Training {
             $this->resync_zume_and_global();
         }
 
-        dt_write_log($_POST);
+        // check for resync request
+        if ( isset( $_POST['close_inactive'] ) ) {
+            dt_write_log('close_inactive');
+            $this->close_inactive_trainings();
+        }
+
         return true;
     }
+
+    public function query_get_zume_group_ids_in_global() {
+        global $wpdb;
+        return $wpdb->get_col( "SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'zume_group_id'" );
+    }
+
+    public function query_get_group_ids_in_zume_training() {
+        global $wpdb;
+        return $wpdb->get_col("SELECT meta_key FROM $wpdb->usermeta WHERE meta_key LIKE 'zume_group%'" );
+    }
+
 
     public function resync_zume_and_global() {
         global $wpdb;
         // get list of groups in training
-        $groups_in_zt = $wpdb->get_col("SELECT meta_key FROM $wpdb->usermeta WHERE meta_key LIKE 'zume_group%'" );
+        $groups_in_zt = $this->query_get_group_ids_in_zume_training();
 
         // get list of groups in global
-        $trainings_in_global = $wpdb->get_col( "SELECT meta_value FROM $wpdb->postmeta WHERE meta_key = 'zume_group_id'" );
+        $trainings_in_global = $this->query_get_zume_group_ids_in_global();
         $trainings = [];
         foreach( $trainings_in_global as $value ) {
             $trainings[$value] = true;
@@ -293,6 +325,51 @@ class Zume_DT_Training {
         </div>
         <?php
 
+    }
+
+    public function close_inactive_trainings() {
+        global $wpdb;
+        $trainings_in_global = $this->query_get_zume_group_ids_in_global();
+
+        $count = [
+            "total" => 0,
+            "check_needed" => 0,
+            "checked" => 0,
+            "checked_list" => get_transient( __METHOD__ ),
+        ];
+        $count['total'] = count($trainings_in_global);
+        if ( $count['checked_list'] === false ) {
+            $count['checked_list'] = [];
+        }
+
+        // compare list
+        $i = 0;
+        foreach( $trainings_in_global as $zume_group_id ) {
+            if ( ! isset( $count['checked_list'][$zume_group_id] ) ) {
+                $count['check_needed']++;
+                if ( $i > 200 ) { // set limit on number of records per sync. keep from timing out.
+                    continue;
+                }
+                // @todo install closing logic 
+//                $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s", $zume_group_id ) );
+//                $group = maybe_unserialize( $group );
+
+
+
+                $count['checked']++;
+                $count['checked_list'][$zume_group_id] = true;
+                $i++;
+            }
+        }
+        set_transient( __METHOD__, $count['checked_list'], 3600 );
+
+        dt_write_log('Resync Transfer');
+        dt_write_log($count);
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['check_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['checked'] ) ?></p>
+        </div>
+        <?php
     }
 
     /**
