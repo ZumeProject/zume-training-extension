@@ -289,7 +289,7 @@ class Zume_DT_Training {
         dt_write_log($count);
         ?>
         <div class="notice notice-success is-dismissible">
-            <p>Total Groups: <?php echo $count['total'] ?>| Transfers Still Needed: <?php echo $count['transfer_needed'] ?> | Transfers Completed: <?php echo $count['transferred'] ?></p>
+            <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['transfer_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['transferred'] ) ?></p>
         </div>
         <?php
 
