@@ -347,7 +347,7 @@ class Zume_DT_Training {
         foreach( $trainings_in_global as $zume_group_id ) {
             if ( ! isset( $count['checked_list'][$zume_group_id] ) ) {
                 $count['check_needed']++;
-                if ( $i > 10 ) { // set limit on number of records per sync. keep from timing out.
+                if ( $i > 200 ) { // set limit on number of records per sync. keep from timing out.
                     continue;
                 }
 
