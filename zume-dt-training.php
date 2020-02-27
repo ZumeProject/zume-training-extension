@@ -293,8 +293,9 @@ class Zume_DT_Training {
         $i = 0;
         foreach( $groups_in_zt as $item ) {
             if ( !isset( $trainings[$item] ) ) {
-                $count['transfer_needed']++;
+
                 if ( $i > 100 ) { // set limit on number of records per sync. keep from timing out.
+                    $count['transfer_needed']++;
                     continue;
                 }
                 $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s", $item ) );
@@ -346,8 +347,8 @@ class Zume_DT_Training {
         $i = 0;
         foreach( $trainings_in_global as $zume_group_id ) {
             if ( ! isset( $count['checked_list'][$zume_group_id] ) ) {
-                $count['check_needed']++;
                 if ( $i > 200 ) { // set limit on number of records per sync. keep from timing out.
+                    $count['check_needed']++;
                     continue;
                 }
 
