@@ -347,14 +347,71 @@ class Zume_DT_Training {
         foreach( $trainings_in_global as $zume_group_id ) {
             if ( ! isset( $count['checked_list'][$zume_group_id] ) ) {
                 $count['check_needed']++;
-                if ( $i > 200 ) { // set limit on number of records per sync. keep from timing out.
+                if ( $i > 10 ) { // set limit on number of records per sync. keep from timing out.
                     continue;
                 }
-                // @todo install closing logic 
-//                $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s", $zume_group_id ) );
-//                $group = maybe_unserialize( $group );
 
+                $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
+                $group = maybe_unserialize( $group );
 
+                $today = time();
+                if ( empty( $group['last_modified_date'] ) ) {
+                    $last_modified_date = '915148800';
+                }
+                else if ( is_int( $group['last_modified_date'] ) ) {
+                    $last_modified_date = (string) $group['last_modified_date'];
+                } else {
+                    $last_modified_date = strtotime($group['last_modified_date']);
+                }
+
+                $difference = $today - $last_modified_date;
+                $days = $difference/60/1000;
+
+                if ( $days > 90 ) {
+
+                    $completed = 0;
+                    if ( $group['session_1'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_2'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_3'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_4'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_5'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_6'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_7'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_8'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_9'] ) {
+                        $completed++;
+                    }
+                    if ( $group['session_10'] ) {
+                        $completed++;
+                    }
+
+                    dt_write_log( $zume_group_id);
+
+                    $post_id = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM $wpdb->postmeta WHERE meta_value = %s and meta_key = 'zume_group_id' LIMIT 1", $zume_group_id ) );
+                    if ( $completed >= 5 ) {
+                        /* test for completed */
+                        update_post_meta( $post_id, 'status', 'complete' );
+                    } else {
+                        /* test for closed */
+                        update_post_meta( $post_id, 'status', 'closed' );
+                    }
+                }
 
                 $count['checked']++;
                 $count['checked_list'][$zume_group_id] = true;
@@ -363,13 +420,20 @@ class Zume_DT_Training {
         }
         set_transient( __METHOD__, $count['checked_list'], 3600 );
 
-        dt_write_log('Resync Transfer');
+        dt_write_log('Close');
         dt_write_log($count);
         ?>
         <div class="notice notice-success is-dismissible">
-            <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['check_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['checked'] ) ?></p>
+            <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Checks Still Needed: <?php echo esc_html( $count['check_needed'] ) ?> | Checks Completed: <?php echo esc_html( $count['checked'] ) ?></p>
         </div>
         <?php
+    }
+
+    public function is_valid_timeStamp($timestamp)
+    {
+        return ((string) (int) $timestamp === $timestamp)
+            && ($timestamp <= PHP_INT_MAX)
+            && ($timestamp >= ~PHP_INT_MAX);
     }
 
     /**
