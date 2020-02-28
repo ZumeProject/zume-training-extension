@@ -319,7 +319,7 @@ class Zume_DT_Training {
         }
 
         dt_write_log('Resync Transfer');
-        dt_write_log($count);
+//        dt_write_log($count);
         ?>
         <div class="notice notice-success is-dismissible">
             <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['transfer_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['transferred'] ) ?></p>
@@ -402,7 +402,7 @@ class Zume_DT_Training {
                         $completed++;
                     }
 
-                    dt_write_log( $zume_group_id);
+//                    dt_write_log( $zume_group_id);
 
                     $post_id = $wpdb->get_var( $wpdb->prepare( "SELECT post_id FROM $wpdb->postmeta WHERE meta_value = %s and meta_key = 'zume_group_id' LIMIT 1", $zume_group_id ) );
                     if ( $completed >= 5 ) {
@@ -422,7 +422,7 @@ class Zume_DT_Training {
         set_transient( __METHOD__, $count['checked_list'], 3600 );
 
         dt_write_log('Close');
-        dt_write_log($count);
+//        dt_write_log($count);
         ?>
         <div class="notice notice-success is-dismissible">
             <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Checks Still Needed: <?php echo esc_html( $count['check_needed'] ) ?> | Checks Completed: <?php echo esc_html( $count['checked'] ) ?></p>
