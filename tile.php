@@ -316,8 +316,56 @@ class Zume_DT_Training_Hook {
                 if ( false /* @todo test if all dates are logged */) {
                     dt_write_log('Need to update date list');
                 }
-                if ( false /* @todo test if address match */) {
-                    dt_write_log('Need to update address');
+                if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) {
+
+                    // @todo check if the results meta and the post meta are identical and need updated
+
+                    // get post meta
+
+                    $match = false;
+                    $location_grid_meta_dt = get_post_meta( $dt_post['ID'], 'location_grid_meta' );
+                    if ( ! empty( $location_grid_meta_dt ) ) {
+                        /* check if already installed */
+                        foreach( $location_grid_meta_dt as $item ) {
+                            $dt_check_sum = hash( 'sha256', maybe_serialize( $item ) );
+                            $zt_check_sum = hash( 'sha256', maybe_serialize( $results['location_grid_meta'] ) );
+
+                            if ( $dt_check_sum === $zt_check_sum ) {
+                                $match = true;
+                            }
+                        }
+                    }
+                    if ( ! $match ) {
+                        /* if no match between zt and dt, then install in dt */
+
+                        $location_grid_meta_zt = maybe_unserialize( $results['location_grid_meta'] );
+                        $grid_id = $location_grid_meta_zt['grid_id'];
+
+                        /* test for grid id, install if missing */
+                        if ( empty( $grid_id ) || '0' == $grid_id ) {
+                            $geocoder = new Location_Grid_Geocoder();
+                            $grid = $geocoder->get_grid_id_by_lnglat( $location_grid_meta_zt['lng'], $location_grid_meta_zt['lat'] );
+                            if ( $grid ) {
+                                $grid_id = $grid['grid_id'];
+                                $location_grid_meta_zt['grid_id'] = $grid_id;
+
+                                $results['location_grid_meta'] = $location_grid_meta_zt;
+                                $results['last_modified_date'] = time();
+
+                                update_user_meta( $results['owner'], $results['key'], $results );
+
+                            }
+                        }
+
+//                        if ( ! empty( $grid_id ) ) {
+//                            add_post_meta( $dt_post['ID'], 'location_grid', $grid_id );
+//                        }
+//
+//                        add_post_meta( $dt_post['ID'], 'location_grid_meta', $location_grid_meta_zt );
+
+                    }
+
+
                 }
 
                 update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
