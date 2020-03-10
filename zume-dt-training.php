@@ -110,7 +110,7 @@ class Zume_DT_Training {
                     $post_array = DT_Posts::get_post( get_post_type(), get_the_ID() );
                 }
 
-                wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . '/zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
+                wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . 'zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
                 wp_localize_script(
                     "zume-training", "zumeTraining", array(
                         "training" => $post_array,
