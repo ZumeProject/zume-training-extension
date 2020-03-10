@@ -342,7 +342,7 @@ class Zume_Training_Extension {
         foreach( $groups_in_zt as $item ) {
             if ( !isset( $trainings[$item] ) ) {
 
-                if ( $i > 100 ) { // set limit on number of records per sync. keep from timing out.
+                if ( $i > 50 ) { // set limit on number of records per sync. keep from timing out.
                     $count['transfer_needed']++;
                     continue;
                 }
