@@ -4,7 +4,7 @@
  */
 
 
-class Zume_DT_Training_Endpoints
+class Zume_Training_Extension_Endpoints
 {
     public $permissions = [ 'view_any_contacts', 'view_contacts', 'view_project_metrics' ];
 
@@ -58,4 +58,4 @@ class Zume_DT_Training_Endpoints
         return $params;
     }
 }
-Zume_DT_Training_Endpoints::instance();
+//Zume_Training_Extension_Endpoints::instance();

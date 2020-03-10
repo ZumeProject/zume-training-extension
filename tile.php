@@ -1,6 +1,6 @@
 <?php
 
-class Zume_DT_Training_Hook {
+class Zume_Training_Extension_Hook {
 
     public function __construct() {
         add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
@@ -14,7 +14,7 @@ class Zume_DT_Training_Hook {
         if ( 'zume_training_details' === $section ) :
 
             global $post;
-            $post_meta = Zume_DT_Training::get_meta( $post->ID );
+            $post_meta = Zume_Training_Extension::get_meta( $post->ID );
 
             // if no public key or group id
             if ( empty( $post_meta['zume_public_key'] ) && empty( $post_meta['zume_group_id'] ) ) {
@@ -307,7 +307,7 @@ class Zume_DT_Training_Hook {
             if ( $dt_post['title'] === '' /* test if it has a title */) {
                 $my_post = array(
                     'ID'           => $dt_post['ID'],
-                    'post_title'   => $results['title'],
+                    'post_title'   => $results['group_name'],
                 );
                 wp_update_post( $my_post );
             }
@@ -331,17 +331,32 @@ class Zume_DT_Training_Hook {
                 if ( isset( $dt_post['zume_location_grid_meta'] ) && isset( $dt_post['location_grid_meta'] ) ) {
                     $zume_location_grid_meta = $dt_post['zume_location_grid_meta'];
                 }
-                
+
                 // compare hashes
-                if ( $new_hash !== $zume_location_grid_meta ) {
+                if ( $new_hash !== $zume_location_grid_meta && ! empty( $results['location_grid_meta']['lng'] ) ) {
                     $geocoder = new Location_Grid_Geocoder();
 
                     if ( $zume_location_grid_meta !== null && isset( $dt_post['location_grid_meta'] ) ) { // remove previous address and replace with current address
                         $geocoder->delete_location_grid_meta( $dt_post['ID'], 'all', 0 );
                         delete_post_meta( $dt_post['ID'], 'zume_location_grid_meta' );
                     }
-                    // empty, add new record
-                    $geocoder->add_location_grid_meta( $dt_post['ID'], $results['location_grid_meta'] );
+
+                    $fields = [
+                        'location_grid_meta' => [
+                            'values' => [
+                                [
+                                    'lng' => $results['location_grid_meta']['lng'],
+                                    'lat' => $results['location_grid_meta']['lat'],
+                                    'level' => $results['location_grid_meta']['level'] ?? 'place',
+                                    'source' => $results['location_grid_meta']['source'] ?? 'user',
+                                    'label' => $results['location_grid_meta']['label'] ?? ''
+                                ]
+                            ]
+                        ]
+                    ];
+
+                    DT_Posts::update_post( 'trainings', $dt_post['ID'], $fields, false, false );
+
                     add_post_meta( $dt_post['ID'], 'zume_location_grid_meta', $new_hash );
                 }
 
@@ -374,4 +389,4 @@ class Zume_DT_Training_Hook {
 
 
 }
-new Zume_DT_Training_Hook();
+new Zume_Training_Extension_Hook();

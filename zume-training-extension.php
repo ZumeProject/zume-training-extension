@@ -20,8 +20,8 @@
  * PLEASE, RENAME CLASS AND FUNCTION NAMES BEFORE USING TEMPLATE
  * Rename these three strings:
  *      Zume Training Extension
- *      Zume_DT_Training
- *      zume_dt_training
+ *      Zume_Training_Extension
+ *      zume_training_extension
  */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly
@@ -38,7 +38,7 @@ add_action( 'after_setup_theme', function (){
         if ( ! is_multisite() ) {
             add_action('admin_notices', function () {
                 ?>
-                <div class="notice notice-error notice-zume_dt_training is-dismissible" data-notice="zume_dt_training">Disciple
+                <div class="notice notice-error notice-zume_training_extension is-dismissible" data-notice="zume_training_extension">Disciple
                     Tools Theme not active or not latest version for Zume Training Extension plugin.
                 </div><?php
             });
@@ -57,7 +57,7 @@ add_action( 'after_setup_theme', function (){
      */
     $is_rest = dt_is_rest();
     if ( !$is_rest || strpos( dt_get_url_path(), 'trainings' ) != false ){
-        return Zume_DT_Training::instance();
+        return Zume_Training_Extension::instance();
     }
     return false;
 
@@ -65,11 +65,11 @@ add_action( 'after_setup_theme', function (){
 
 
 /**
- * Class Zume_DT_Training
+ * Class Zume_Training_Extension
  */
-class Zume_DT_Training {
+class Zume_Training_Extension {
 
-    public $token = 'zume_dt_training';
+    public $token = 'zume_training_extension';
     public $title = 'Zúme Training Extension';
     public $permissions = 'manage_dt';
 
@@ -88,7 +88,7 @@ class Zume_DT_Training {
      */
     public function __construct() {
         require_once ('tile.php' );
-        require_once ('rest-api.php' );
+//        require_once ('rest-api.php' ); @todo remove
 
         add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
 
@@ -102,31 +102,9 @@ class Zume_DT_Training {
 
             $url_path = dt_get_url_path();
 
-            // trainings post type
-
-            if ( strpos( $url_path, 'trainings' ) !== false ){
-                $post_array = [];
-                if ( is_single() ) {
-                    $post_array = DT_Posts::get_post( get_post_type(), get_the_ID() );
-                }
-
+            if ( strpos( $url_path, 'trainings' ) !== false && is_single() ){
                 wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . 'zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
-                wp_localize_script(
-                    "zume-training", "zumeTraining", array(
-                        "training" => $post_array,
-                        "translations" => array(
-                            "cancel" => esc_html__( 'Cancel', 'zume' ),
-                            "current:" => esc_html__( 'Current Step:', 'zume' ),
-                            "pagination" => esc_html__( 'Cancel', 'zume' ),
-                            "finish" => esc_html__( 'Finish', 'zume' ),
-                            "next" => esc_html__( 'Next', 'zume' ),
-                            "previous" => esc_html__( 'Previous', 'zume' ),
-                            "loading" => esc_html__( 'Loading...', 'zume' ),
-                        )
-                    )
-                );
             }
-
         }
     }
 
@@ -192,14 +170,14 @@ class Zume_DT_Training {
         <!-- Box -->
         <table class="widefat striped">
             <thead>
-            <tr><th>Resync Zúme Training Groups to Global Network Training Groups</th></tr>
+            <tr><th>Transfer Zume Groups to Global</th></tr>
             </thead>
             <tbody>
             <tr>
                 <td>
                     <form method="post">
                         <?php wp_nonce_field() ?>
-                        <button type="submit" class="button large" name="resync" value="true">Resync Zúme.Training to Global.Zúme</button>
+                        <button type="submit" class="button large" name="resync" value="true">Transfer Zume Groups to Global</button>
                     </form>
                 </td>
             </tr>
@@ -211,7 +189,7 @@ class Zume_DT_Training {
         <!-- Box -->
         <table class="widefat striped">
             <thead>
-            <tr><th>Close Inactive Zúme.Training Groups</th></tr>
+            <tr><th>Close Inactive Zúme.Training Groups in Global</th></tr>
             </thead>
             <tbody>
             <tr>
@@ -219,6 +197,25 @@ class Zume_DT_Training {
                     <form method="post">
                         <?php wp_nonce_field() ?>
                         <button type="submit" class="button large" name="close_inactive" value="true">Close Inactive Zùme Training Groups</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <br>
+        <!-- End Box -->
+
+        <!-- Box -->
+        <table class="widefat striped">
+            <thead>
+            <tr><th>Compare and Update Zume Groups with Global Trainings</th></tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td>
+                    <form method="post">
+                        <?php wp_nonce_field() ?>
+                        <button type="submit" class="button large" name="compare_groups" value="true">Compare and Update Zume Groups with Global Trainings</button>
                     </form>
                 </td>
             </tr>
@@ -237,7 +234,7 @@ class Zume_DT_Training {
         // check for valid nonce
         if ( ! ( isset( $_POST['_wpnonce'] )
             && isset( $_POST['_wp_http_referer'] )
-            && '/wp-admin/admin.php?page=zume_dt_training' === sanitize_text_field( wp_unslash( $_POST['_wp_http_referer'] ) )
+            && '/wp-admin/admin.php?page=zume_training_extension' === sanitize_text_field( wp_unslash( $_POST['_wp_http_referer'] ) )
             && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['_wpnonce'] ) ) ) ) )
         {
             return false;
@@ -255,6 +252,12 @@ class Zume_DT_Training {
             $this->close_inactive_trainings();
         }
 
+        // check for resync request
+        if ( isset( $_POST['compare_groups'] ) ) {
+            dt_write_log('compare_groups');
+            $this->compare_groups();
+        }
+
         return true;
     }
 
@@ -268,6 +271,51 @@ class Zume_DT_Training {
         return $wpdb->get_col("SELECT meta_key FROM $wpdb->usermeta WHERE meta_key LIKE 'zume_group%'" );
     }
 
+    public function compare_groups() {
+        global $wpdb;
+        $trainings_in_global = $wpdb->get_results( "SELECT post_id, meta_value as zume_group_id FROM $wpdb->postmeta WHERE meta_key = 'zume_group_id'", ARRAY_A );
+
+
+        $count = [
+            "total" => 0,
+            "check_needed" => 0,
+            "checked" => 0,
+            "checked_list" => get_transient( __METHOD__ ),
+        ];
+        $count['total'] = count($trainings_in_global);
+        if ( $count['checked_list'] === false ) {
+            $count['checked_list'] = [];
+        }
+
+        $obj = new Zume_Training_Extension_Hook();
+
+        // compare list
+        $i = 0;
+        foreach( $trainings_in_global as $row ) {
+            if ( ! isset( $count['checked_list'][$row['zume_group_id']] ) ) {
+                if ( $i > 100 ) { // set limit on number of records per sync. keep from timing out.
+                    $count['check_needed']++;
+                    continue;
+                }
+
+                $dt_post = DT_Posts::get_post( 'trainings', $row['post_id'] );
+                $obj->get_zume_group( $row['zume_group_id'], $dt_post );
+
+                $count['checked']++;
+                $count['checked_list'][$row['zume_group_id']] = true;
+                $i++;
+            }
+        }
+        set_transient( __METHOD__, $count['checked_list'], 3600 );
+
+        dt_write_log($count);
+
+        ?>
+        <div class="notice notice-success is-dismissible">
+            <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Checks Still Needed: <?php echo esc_html( $count['check_needed'] ) ?> | Checks Completed: <?php echo esc_html( $count['checked'] ) ?></p>
+        </div>
+        <?php
+    }
 
     public function resync_zume_and_global() {
         global $wpdb;
@@ -347,7 +395,7 @@ class Zume_DT_Training {
         $i = 0;
         foreach( $trainings_in_global as $zume_group_id ) {
             if ( ! isset( $count['checked_list'][$zume_group_id] ) ) {
-                if ( $i > 200 ) { // set limit on number of records per sync. keep from timing out.
+                if ( $i > 500 ) { // set limit on number of records per sync. keep from timing out.
                     $count['check_needed']++;
                     continue;
                 }
@@ -512,5 +560,5 @@ class Zume_DT_Training {
 }
 
 // Register activation hook.
-register_activation_hook( __FILE__, [ 'Zume_DT_Training', 'activation' ] );
-register_deactivation_hook( __FILE__, [ 'Zume_DT_Training', 'deactivation' ] );
+register_activation_hook( __FILE__, [ 'Zume_Training_Extension', 'activation' ] );
+register_deactivation_hook( __FILE__, [ 'Zume_Training_Extension', 'deactivation' ] );
