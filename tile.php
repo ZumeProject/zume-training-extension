@@ -2,6 +2,13 @@
 
 class Zume_DT_Training_Hook {
 
+    public function __construct() {
+        add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
+        add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
+        add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
+        add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
+    }
+
     public function training_detail_box( $section ) {
 
         if ( 'zume_training_details' === $section ) :
@@ -297,80 +304,55 @@ class Zume_DT_Training_Hook {
 
 //            if ( ! isset( $dt_post['zume_check_sum'] ) || $dt_post['zume_check_sum'] !== hash('sha256', maybe_serialize( $raw_results ) ) ) {
 
-                if ( $dt_post['title'] === '' /* test if it has a title */) {
-                    $my_post = array(
-                        'ID'           => $dt_post['ID'],
-                        'post_title'   => $results['title'],
-                    );
-                    wp_update_post( $my_post );
-                }
-                if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
-                    update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
-                }
-                if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
-                    update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
-                }
-                if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
-                    update_post_meta( $dt_post['ID'], 'leader_count', 1 );
-                }
-                if ( false /* @todo test if all dates are logged */) {
-                    dt_write_log('Need to update date list');
-                }
-                if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) {
+            if ( $dt_post['title'] === '' /* test if it has a title */) {
+                $my_post = array(
+                    'ID'           => $dt_post['ID'],
+                    'post_title'   => $results['title'],
+                );
+                wp_update_post( $my_post );
+            }
+            if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
+                update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
+            }
+            if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
+                update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
+            }
+            if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
+                update_post_meta( $dt_post['ID'], 'leader_count', 1 );
+            }
 
-                    // @todo check if the results meta and the post meta are identical and need updated
+            if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) { // does the ztraining have a location set
 
-                    // get post meta
+                // hash z lgm
+                $new_hash = hash( 'sha256', maybe_serialize( $results['location_grid_meta'] ) );
 
-                    $match = false;
-                    $location_grid_meta_dt = get_post_meta( $dt_post['ID'], 'location_grid_meta' );
-                    if ( ! empty( $location_grid_meta_dt ) ) {
-                        /* check if already installed */
-                        foreach( $location_grid_meta_dt as $item ) {
-                            $dt_check_sum = hash( 'sha256', maybe_serialize( $item ) );
-                            $zt_check_sum = hash( 'sha256', maybe_serialize( $results['location_grid_meta'] ) );
+                // check for 'zume_location_meta_grid' hash
+                $zume_location_grid_meta = null;
+                if ( isset( $dt_post['zume_location_grid_meta'] ) && isset( $dt_post['location_grid_meta'] ) ) {
+                    $zume_location_grid_meta = $dt_post['zume_location_grid_meta'];
+                }
+                
+                // compare hashes
+                if ( $new_hash !== $zume_location_grid_meta ) {
+                    $geocoder = new Location_Grid_Geocoder();
 
-                            if ( $dt_check_sum === $zt_check_sum ) {
-                                $match = true;
-                            }
-                        }
+                    if ( $zume_location_grid_meta !== null && isset( $dt_post['location_grid_meta'] ) ) { // remove previous address and replace with current address
+                        $geocoder->delete_location_grid_meta( $dt_post['ID'], 'all', 0 );
+                        delete_post_meta( $dt_post['ID'], 'zume_location_grid_meta' );
                     }
-                    if ( ! $match ) {
-                        /* if no match between zt and dt, then install in dt */
-
-                        $location_grid_meta_zt = maybe_unserialize( $results['location_grid_meta'] );
-                        $grid_id = $location_grid_meta_zt['grid_id'];
-
-                        /* test for grid id, install if missing */
-                        if ( empty( $grid_id ) || '0' == $grid_id ) {
-                            $geocoder = new Location_Grid_Geocoder();
-                            $grid = $geocoder->get_grid_id_by_lnglat( $location_grid_meta_zt['lng'], $location_grid_meta_zt['lat'] );
-                            if ( $grid ) {
-                                $grid_id = $grid['grid_id'];
-                                $location_grid_meta_zt['grid_id'] = $grid_id;
-
-                                $results['location_grid_meta'] = $location_grid_meta_zt;
-                                $results['last_modified_date'] = time();
-
-                                update_user_meta( $results['owner'], $results['key'], $results );
-
-                            }
-                        }
-
-//                        if ( ! empty( $grid_id ) ) {
-//                            add_post_meta( $dt_post['ID'], 'location_grid', $grid_id );
-//                        }
-//
-//                        add_post_meta( $dt_post['ID'], 'location_grid_meta', $location_grid_meta_zt );
-
-                    }
-
-
+                    // empty, add new record
+                    $geocoder->add_location_grid_meta( $dt_post['ID'], $results['location_grid_meta'] );
+                    add_post_meta( $dt_post['ID'], 'zume_location_grid_meta', $new_hash );
                 }
 
-                update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
+            }
+
+            if ( false /* @todo test if all dates are logged */) {
+                dt_write_log('Need to update date list');
+            }
+
+//                update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
 //            }
-
             return $results;
         } else {
             return false;
@@ -390,11 +372,6 @@ class Zume_DT_Training_Hook {
         return $fields;
     }
 
-    public function __construct() {
-        add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
-        add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
-        add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
-        add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
-    }
+
 }
 new Zume_DT_Training_Hook();
