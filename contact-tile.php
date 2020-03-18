@@ -116,6 +116,15 @@ class Zume_Contact_Extension_Hook {
                 <!-- Info box -->
                 <div class="tabs-panel is-active" id="info" style="min-height: 300px; vertical-align: top;">
                     <dl>
+                        <?php if ( isset( $record['last_activity'] ) ) :
+                            ?>
+                            <dt>
+                                <?php esc_html_e( 'Last Activity' ) ?>:
+                            </dt>
+                            <dd>
+                                <?php echo empty( $record['last_activity'] ) ? '' : $this->time_elapsed_string( $record['last_activity'] )  ?><br>
+                            </dd>
+                        <?php endif; ?>
 
                         <?php if ( isset( $record['location_grid_meta']['label'] ) ) :
                             ?>
@@ -148,18 +157,6 @@ class Zume_Contact_Extension_Hook {
                             }
                         }
                         ?>
-
-
-
-                        <?php if ( isset( $record['last_activity'] ) ) :
-                            ?>
-                            <dt>
-                                <?php esc_html_e( 'Last Activity' ) ?>:
-                            </dt>
-                            <dd>
-                                <?php echo empty( $record['last_activity'] ) ? '' : esc_html( $record['last_activity'] ) ?>
-                            </dd>
-                        <?php endif; ?>
 
                         <?php if ( isset( $record['zume_language'] ) ) :
                             ?>
@@ -218,6 +215,35 @@ class Zume_Contact_Extension_Hook {
             </div>
 
         <?php endif; // end has group id
+    }
+
+    public function time_elapsed_string( $datetime, $full = false) {
+        $now = new DateTime;
+        $ago = new DateTime($datetime);
+        $diff = $now->diff($ago);
+
+        $diff->w = floor($diff->d / 7);
+        $diff->d -= $diff->w * 7;
+
+        $string = array(
+            'y' => 'year',
+            'm' => 'month',
+            'w' => 'week',
+            'd' => 'day',
+            'h' => 'hour',
+            'i' => 'minute',
+            's' => 'second',
+        );
+        foreach ($string as $k => &$v) {
+            if ($diff->$k) {
+                $v = $diff->$k . ' ' . $v . ($diff->$k > 1 ? 's' : '');
+            } else {
+                unset($string[$k]);
+            }
+        }
+
+        if (!$full) $string = array_slice($string, 0, 1);
+        return $string ? implode(', ', $string) . ' ago' : 'just now';
     }
 
     public function verify_progress_array( &$args ) {
