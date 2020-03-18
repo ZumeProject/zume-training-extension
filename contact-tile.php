@@ -17,24 +17,24 @@ class Zume_Contact_Extension_Hook {
             $post_meta = Zume_Training_Extension::get_meta( $post->ID );
 
             // if no public key or group id
-            if ( empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_user_id'] ) ) {
+            if ( empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_training_id'] ) ) {
                 $this->display_foreign_key_for_linking();
             }
             // if public key but no group id
-            else if ( ! empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_user_id'] ) ) {
+            else if ( ! empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_training_id'] ) ) {
                 // get group id and add it
-                $zume_user_id = $this->get_user_id_by_key( $post_meta['zume_foreign_key'] );
-                if ( $zume_user_id ) {
-                    update_post_meta( $post->ID, 'zume_user_id', $zume_user_id );
-                    $this->display_zume_user( $zume_user_id );
+                $zume_training_id = $this->get_user_id_by_key( $post_meta['zume_foreign_key'] );
+                if ( $zume_training_id ) {
+                    update_post_meta( $post->ID, 'zume_training_id', $zume_training_id );
+                    $this->display_zume_user( $zume_training_id );
                 } else {
                     $this->display_foreign_key_for_linking();
                 }
             }
            // if user id
-            else if ( ! empty( $post_meta['zume_user_id'] ) ) {
+            else if ( ! empty( $post_meta['zume_training_id'] ) ) {
                 // then query by group id
-                $this->display_zume_user( $post_meta['zume_user_id'] );
+                $this->display_zume_user( $post_meta['zume_training_id'] );
             }
 
         endif; // End test if section zume_training
@@ -73,8 +73,8 @@ class Zume_Contact_Extension_Hook {
         <?php
     }
 
-    public function display_zume_user( $zume_user_id ) {
-        $record = $this->get_zume_user( $zume_user_id );
+    public function display_zume_user( $zume_training_id ) {
+        $record = $this->get_zume_user( $zume_training_id );
         dt_write_log($record);
         if ( ! $record ) :
             $this->display_foreign_key_for_linking();
@@ -393,7 +393,7 @@ class Zume_Contact_Extension_Hook {
 
     public function register_fields( $fields, $post_type ) {
         if ( 'contacts' === $post_type ) {
-            $fields['zume_user_id'] = [
+            $fields['zume_training_id'] = [
                 'name' => "Zume User ID",
                 'type' => 'text',
                 'default' => '',
@@ -412,11 +412,11 @@ class Zume_Contact_Extension_Hook {
     }
 
     /**
-     * @param $zume_user_id
+     * @param $zume_training_id
      * @return bool|array
      */
-    public function get_zume_user( $zume_user_id ) {
-       $usermeta = zume_get_user_meta( $zume_user_id );
+    public function get_zume_user( $zume_training_id ) {
+       $usermeta = zume_get_user_meta( $zume_training_id );
 
         if ( $usermeta ) {
             return $usermeta;
@@ -432,8 +432,8 @@ class Zume_Contact_Extension_Hook {
      * @return mixed
      */
     public function remove_zume_from_post_array( $fields ) {
-        if ( isset( $fields['zume_user_id'] ) ) {
-            unset( $fields['zume_user_id'] );
+        if ( isset( $fields['zume_training_id'] ) ) {
+            unset( $fields['zume_training_id'] );
         }
         if ( isset( $fields['zume_foreign_key'] ) ) {
             unset( $fields['zume_foreign_key'] );
