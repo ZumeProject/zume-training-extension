@@ -70,7 +70,6 @@ class Zume_Training_Extension_Hook {
                 })
             })
         </script>
-
         <?php
     }
 
@@ -83,7 +82,6 @@ class Zume_Training_Extension_Hook {
             else: // if zume key matches
                 ?>
                 <label class="section-header"><?php esc_html_e( 'Zúme.Training Course' ) ?><button class="button clear small" id="unlink-zume-group">unlink</button></label>
-
                 <style>
                     #zume-tabs li a { padding: 1rem 1rem; }
                     .date-text {
@@ -92,11 +90,12 @@ class Zume_Training_Extension_Hook {
                 </style>
 
                 <ul class="tabs" data-tabs id="zume-tabs">
-                    <li class="tabs-title is-active"><a href="#sessions" aria-selected="true"><?php esc_html_e( 'Sessions' ) ?></a></li>
-                    <li class="tabs-title"><a href="#members" data-tabs-target="members"><?php esc_html_e( 'Participants' ) ?></a></li>
-                    <li class="tabs-title"><a href="#info" data-tabs-target="info"><?php esc_html_e( 'Info' ) ?></a></li>
+                    <li class="tabs-title is-active"><a href="#sessions" aria-selected="true"><i class="fi-results"></i></a></li>
+                    <li class="tabs-title"><a href="#info" data-tabs-target="info"><i class="fi-info"></i></a></li>
+                    <li class="tabs-title"><a href="#owner" data-tabs-target="owner"><i class="fi-torso"></i></a></li>
+                    <li class="tabs-title"><a href="#members" data-tabs-target="members"><i class="fi-torsos-all"></i></a></li>
                     <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
-                        <li class="tabs-title"><a data-tabs-target="raw" href="#raw"><?php esc_html_e( 'Raw' ) ?></a></li>
+                        <li class="tabs-title"><a data-tabs-target="raw" href="#raw"><i class="fi-database"></i></a></li>
                     <?php endif; ?>
                 </ul>
 
@@ -151,34 +150,31 @@ class Zume_Training_Extension_Hook {
                         <?php } // endif ?>
                     </div>
 
-                    <!-- Members Tab-->
-                    <div class="tabs-panel" id="members" style="height: 375px;">
-                        <?php
-                        if ( ! empty( $record['coleaders'] ) ) {
-                            ?>
-                            <div class="grid-x">
-                                <?php foreach ( $record['coleaders'] as $coleader ) : ?>
-                                    <div class="cell"><?php echo esc_html( $coleader ) ?><br><button class="button hollow small" disabled>Create Contact</button></div>
-                                <?php endforeach; ?>
-                            </div>
-                            <?php
-                        }
-                        ?>
-                    </div>
-                    <br clear="all" />
-
                     <!-- Info box -->
-                    <div class="tabs-panel" id="info" style="min-height: 375px; vertical-align: top;">
+                    <div class="tabs-panel" id="info" style="min-height: 500px; vertical-align: top;">
 
                         <dl>
+                            <dt>
+                                TRAINING DETAILS<hr>
+                            </dt>
 
-                            <?php if ( isset( $record['members'] ) && ! empty( $record['members'] ) ) :
+                            <?php if ( isset( $record['members'] ) ) :
                                 ?>
                                 <dt>
-                                    <?php esc_html_e( 'Members' ) ?>:
+                                    <?php esc_html_e( 'Claimed Participants' ) ?>:
                                 </dt>
                                 <dd>
-                                    <?php echo esc_attr( $record['members'] ) ?>
+                                    <?php echo empty( $record['members'] ) ? '0' : esc_attr( $record['members'] ) ?>
+                                </dd>
+                            <?php endif; ?>
+
+                            <?php if ( isset( $record['coleaders'] ) ) :
+                                ?>
+                                <dt>
+                                    <?php esc_html_e( 'Participants with Emails in Group' ) ?>:
+                                </dt>
+                                <dd>
+                                    <?php echo empty( $record['coleaders'] ) ? '0' : esc_attr( $record['coleaders'] ) ?>
                                 </dd>
                             <?php endif; ?>
 
@@ -214,7 +210,7 @@ class Zume_Training_Extension_Hook {
                             <?php endif; ?>
 
                             <?php if ( isset( $record['last_modified_date'] ) && ! empty( $record['last_modified_date'] ) ) :
-                                $mdy = date('m/d/Y', strtotime( $record['last_modified_date'] ) );
+                                $mdy = date('m/d/Y', $record['last_modified_date'] );
                                 ?>
                                 <dt>
                                     <?php esc_html_e( 'Last Active' ) ?>:
@@ -234,20 +230,91 @@ class Zume_Training_Extension_Hook {
                                 </dd>
                             <?php endif; ?>
 
+                            <?php if ( isset( $record['ip_location_grid_meta']['label'] ) ) :
+                                ?>
+                                <dt>
+                                    <?php esc_html_e( 'IP Address Location' ) ?>:
+                                </dt>
+                                <dd>
+                                    <?php echo empty( $record['ip_location_grid_meta']['label'] ) ? '' : esc_html( $record['ip_location_grid_meta']['label'] ) ?>
+                                </dd>
+                            <?php endif; ?>
+
                         </dl>
 
                     </div>
 
-                    <!-- Raw Tab-->
-                    <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
-                        <div class="tabs-panel" id="raw" style="width: 100%;height: 300px;overflow-y: scroll;overflow-x:hidden;">
+                    <!-- Owner Tab-->
+                    <div class="tabs-panel" id="owner" style="min-height: 500px;vertical-align: top;">
+
+                        <dl>
+                            <dt>OWNER DETAILS<hr></dt>
+
                             <?php
-                            if ( $record ) {
-                                foreach ( $record as $key => $value ) {
-                                    echo '<strong>' . esc_attr( $key ) . ': </strong>' . esc_attr( maybe_serialize( $value ) ) . '<br>';
+                            if ( ! empty( $record['owner'] ) ) :
+                            $user = get_user_by( 'ID', $record['owner'] );
+                            $usermeta = zume_get_user_meta( $record['owner'] );
+                            ?>
+
+                            <dt>Owner</dt>
+                            <dd>
+                                <?php echo esc_html( $user->data->display_name ) ?><br>
+                                <?php echo esc_html( $user->data->user_email ) ?>
+                                <br>
+                                <button class="button hollow small" disabled>Create Contact</button>
+                            </dd>
+
+                            <dt>Owner's Other Groups</dt>
+                            <?php
+                            foreach( $usermeta as $key => $value ) {
+                                if ( substr( $key, 0, 10 ) === 'zume_group' && $key !== $record['key'] ) {
+                                    ?>
+                                    <dd>
+                                        <?php echo esc_html( $value['group_name'] ) ?>
+                                    </dd>
+                                    <?php
                                 }
                             }
                             ?>
+
+                            <?php if ( isset( $usermeta['zume_foreign_key'] ) && user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
+                                <dt class="cell"><strong>Owner Key</strong></dt>
+                                <dd><input type="text" value="<?php echo esc_attr( $usermeta['zume_foreign_key'] ) ?>" /></dd>
+                            <?php endif; ?>
+
+                            <?php endif; // end if owner record ?>
+                        </dl>
+
+                    </div> <!-- end tab -->
+
+
+                    <!-- Members Tab-->
+                    <div class="tabs-panel" id="members" style="min-height: 500px;vertical-align: top;">
+                        <dl>
+                            <dt><strong>MEMBERS DETAILS<hr></strong></dt>
+                            <?php if ( ! empty( $record['coleaders'] ) ) { ?>
+                                <?php foreach ( $record['coleaders'] as $coleader ) : ?>
+                                    <dd><?php echo esc_html( $coleader ) ?><br><button class="button hollow small" disabled>Create Contact</button></dd>
+                                <?php endforeach; ?>
+                           <?php } ?>
+                        </dl>
+                    </div>
+
+
+
+
+                    <!-- Raw Tab-->
+                    <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
+                        <div class="tabs-panel" id="raw" >
+                            <div style="width:100%;height: 500px;overflow-y: scroll;overflow-x:hidden;">
+                                <?php
+                                if ( $record ) {
+                                    foreach ( $record as $key => $value ) {
+                                        echo '<strong>' . esc_attr( $key ) . ': </strong>' . esc_attr( maybe_serialize( $value ) ) . '<br>';
+                                    }
+                                }
+                                ?>
+                            </div>
                         </div>
                     <?php endif;  // end Raw Tab ?>
                 </div>

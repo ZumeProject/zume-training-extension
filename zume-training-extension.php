@@ -562,3 +562,16 @@ class Zume_Training_Extension {
 // Register activation hook.
 register_activation_hook( __FILE__, [ 'Zume_Training_Extension', 'activation' ] );
 register_deactivation_hook( __FILE__, [ 'Zume_Training_Extension', 'deactivation' ] );
+
+if ( ! function_exists( 'zume_get_user_meta' ) ) {
+    function zume_get_user_meta( $user_id = null ) {
+        if ( ! is_user_logged_in() ) {
+            return [];
+        }
+        if ( is_null( $user_id ) ) {
+            $user_id = get_current_user_id();
+        }
+        return array_map( function ( $a ) { return maybe_unserialize( $a[0] );
+        }, get_user_meta( $user_id ) );
+    }
+}
