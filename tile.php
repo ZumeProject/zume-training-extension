@@ -174,14 +174,14 @@ class Zume_Training_Extension_Hook {
                                     <?php esc_html_e( 'Participants with Emails in Group' ) ?>:
                                 </dt>
                                 <dd>
-                                    <?php echo empty( $record['coleaders'] ) ? '0' : esc_attr( $record['coleaders'] ) ?>
+                                    <?php echo empty( $record['coleaders'] ) ? '0' : count( $record['coleaders'] ) ?>
                                 </dd>
                             <?php endif; ?>
 
                             <?php if ( isset( $record['coleaders_accepted'] ) && ! empty( $record['coleaders_accepted'] ) ) :
                                 ?>
                                 <dt>
-                                    <?php esc_html_e( 'Coleaders' ) ?>:
+                                    <?php esc_html_e( 'Participants Invitations Accepted' ) ?>:
                                 </dt>
                                 <dd>
                                     <?php echo esc_attr( is_array( $record['coleaders_accepted'] ) ? count( $record['coleaders_accepted'] ) : '' ) ?>
@@ -199,7 +199,11 @@ class Zume_Training_Extension_Hook {
                             <?php endif; ?>
 
                             <?php if ( isset( $record['created_date'] ) && ! empty( $record['created_date'] ) ) :
-                                $mdy = DateTime::createFromFormat( 'Y-m-d H:i:s', $record['created_date'] )->format( 'm/d/Y' );
+                                if ( is_numeric( $record['created_date'] ) ) {
+                                    $mdy = date('m/d/Y', $record['created_date'] );
+                                } else {
+                                    $mdy = date('m/d/Y', strtotime( $record['created_date'] ) );
+                                }
                                 ?>
                                 <dt>
                                     <?php esc_html_e( 'Group Start Date' ) ?>:
@@ -210,7 +214,11 @@ class Zume_Training_Extension_Hook {
                             <?php endif; ?>
 
                             <?php if ( isset( $record['last_modified_date'] ) && ! empty( $record['last_modified_date'] ) ) :
-                                $mdy = date('m/d/Y', $record['last_modified_date'] );
+                                if ( is_numeric( $record['last_modified_date'] ) ) {
+                                     $mdy = date('m/d/Y', $record['last_modified_date'] );
+                                } else {
+                                    $mdy = date('m/d/Y', strtotime( $record['last_modified_date'] ) );
+                                }
                                 ?>
                                 <dt>
                                     <?php esc_html_e( 'Last Active' ) ?>:
