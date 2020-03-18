@@ -87,7 +87,9 @@ class Zume_Training_Extension {
      * @since   0.1.0
      */
     public function __construct() {
-        require_once ('tile.php' );
+        require_once ('training-tile.php' );
+        require_once ('contact-tile.php' );
+
 //        require_once ('rest-api.php' ); @todo remove
 
         add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
