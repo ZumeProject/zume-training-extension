@@ -356,8 +356,17 @@ class Zume_Training_Extension_Hook {
                 'show_in_table' => false,
                 'hidden' => true
             ];
-            $fields['zume_check_sum'] = [
-                'name' => "Zume Group Check Sum",
+        }
+        if ( 'contacts' === $post_type ) {
+            $fields['zume_user_id'] = [
+                'name' => "Zume User ID",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false,
+                'hidden' => true
+            ];
+            $fields['zume_foreign_key'] = [
+                'name' => "Zume Foriegn Key",
                 'type' => 'text',
                 'default' => '',
                 'show_in_table' => false,
@@ -376,8 +385,6 @@ class Zume_Training_Extension_Hook {
         $raw_results = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
         if ( $raw_results ) {
             $results = maybe_unserialize( $raw_results );
-
-//            if ( ! isset( $dt_post['zume_check_sum'] ) || $dt_post['zume_check_sum'] !== hash('sha256', maybe_serialize( $raw_results ) ) ) {
 
             if ( $dt_post['title'] === '' /* test if it has a title */) {
                 $my_post = array(
@@ -436,13 +443,6 @@ class Zume_Training_Extension_Hook {
                 }
 
             }
-
-            if ( false /* @todo test if all dates are logged */) {
-                dt_write_log('Need to update date list');
-            }
-
-//                update_post_meta( $dt_post['ID'], 'zume_check_sum', hash('sha256', maybe_serialize( $raw_results ) ) );
-//            }
             return $results;
         } else {
             return false;
@@ -456,8 +456,11 @@ class Zume_Training_Extension_Hook {
      * @return mixed
      */
     public function remove_zume_from_post_array( $fields ) {
-        if ( isset( $fields['zume_check_sum'] ) ) {
-            unset( $fields['zume_check_sum'] );
+        if ( isset( $fields['zume_public_key'] ) ) {
+            unset( $fields['zume_public_key'] );
+        }
+        if ( isset( $fields['zume_group_id'] ) ) {
+            unset( $fields['zume_group_id'] );
         }
         return $fields;
     }
