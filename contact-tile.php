@@ -75,7 +75,7 @@ class Zume_Contact_Extension_Hook {
 
     public function display_zume_user( $zume_training_id ) {
         $record = $this->get_zume_user( $zume_training_id );
-        dt_write_log($record);
+//    dt_write_log($record);
         if ( ! $record ) :
             $this->display_foreign_key_for_linking();
         else: // if zume key matches
@@ -90,7 +90,7 @@ class Zume_Contact_Extension_Hook {
 
 
             <ul class="tabs" data-tabs id="zume-tabs">
-<!--                <li class="tabs-title is-active"><a href="#progress" aria-selected="true"><i class="fi-results"></i></a></li>-->
+
                 <li class="tabs-title is-active"><a href="#info" data-tabs-target="info"><i class="fi-info"></i></a></li>
                 <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
                     <li class="tabs-title"><a data-tabs-target="raw" href="#raw"><i class="fi-database"></i></a></li>
@@ -148,7 +148,7 @@ class Zume_Contact_Extension_Hook {
 
                         <dt>Groups:</dt>
                         <?php foreach( $record as $key => $value ) {
-                            if ( substr( $key, 0, 10 ) === 'zume_group' && $key !== $record['key'] ) {
+                            if ( substr( $key, 0, 10 ) === 'zume_group' && $key !== $value['key'] ) {
                                 ?>
                                 <dd>
                                     - <?php echo esc_html( $value['group_name'] ) ?>
