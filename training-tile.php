@@ -416,10 +416,9 @@ class Zume_Training_Extension_Hook {
 
                 // compare hashes
                 if ( $new_hash !== $zume_location_grid_meta && ! empty( $results['location_grid_meta']['lng'] ) ) {
-                    $geocoder = new Location_Grid_Geocoder();
 
                     if ( $zume_location_grid_meta !== null && isset( $dt_post['location_grid_meta'] ) ) { // remove previous address and replace with current address
-                        $geocoder->delete_location_grid_meta( $dt_post['ID'], 'all', 0 );
+                        Location_Grid_Meta::add_location_grid_meta( $dt_post['ID'], 'all', 0 );
                         delete_post_meta( $dt_post['ID'], 'zume_location_grid_meta' );
                     }
 
