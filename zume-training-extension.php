@@ -90,8 +90,6 @@ class Zume_Training_Extension {
         require_once ('training-tile.php' );
         require_once ('contact-tile.php' );
 
-//        require_once ('rest-api.php' ); @todo remove
-
         add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
 
         if ( is_admin() ) {
