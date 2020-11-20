@@ -3,7 +3,7 @@
  * Plugin Name: Zúme Training Extension of Disciple Tools
  * Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension
  * Description: One page extension of Disciple Tools Training plugin to include Zúme specific training data.
- * Version:  0.1.0
+ * Version:  0.2
  * Author URI: https://github.com/DiscipleTools
  * GitHub Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension
  * Requires at least: 4.7.0
@@ -16,13 +16,6 @@
  *          https://www.gnu.org/licenses/gpl-2.0.html
  */
 
-/**
- * PLEASE, RENAME CLASS AND FUNCTION NAMES BEFORE USING TEMPLATE
- * Rename these three strings:
- *      Zume Training Extension
- *      Zume_Training_Extension
- *      zume_training_extension
- */
 
 if ( ! defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly
 
@@ -87,27 +80,35 @@ class Zume_Training_Extension {
      * @since   0.1.0
      */
     public function __construct() {
-        require_once ('training-tile.php' );
-        require_once ('contact-tile.php' );
+        require_once ('cron.php' );
 
-        add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
+        if ( function_exists( 'dt_get_url_path') ) {
+            $url_path = dt_get_url_path();
+
+            // load only on contact details page
+            if ( strpos( $url_path, 'contacts' ) !== false && is_single() ) {
+                require_once ('contact-tile.php' );
+                add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
+            }
+
+            // load only on training details page
+            if ( strpos( $url_path, 'trainings' ) !== false && is_single() ) {
+                require_once ('training-tile.php' );
+                add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
+            }
+
+        }
 
         if ( is_admin() ) {
             add_action( "admin_menu", [ $this, "register_menu" ] );
         }
+
+
     } // End __construct()
 
     public function scripts() {
-        if ( function_exists( 'dt_get_url_path') ) {
-
-            $url_path = dt_get_url_path();
-
-            if ( strpos( $url_path, 'trainings' ) !== false && is_single() ){
-                wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . 'zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
-            }
-        }
+        wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . 'zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
     }
-
 
     /**
      * Loads the subnav page
@@ -150,8 +151,6 @@ class Zume_Training_Extension {
                         </div><!-- end post-body-content -->
                         <div id="postbox-container-1" class="postbox-container">
                             <!-- Right Column -->
-
-                            <?php $this->right_column(); ?>
 
                             <!-- End Right Column -->
                         </div><!-- postbox-container 1 -->
@@ -224,10 +223,6 @@ class Zume_Training_Extension {
         <br>
         <!-- End Box -->
         <?php
-    }
-
-    public function right_column() {
-        ?><?php
     }
 
     public function process_postback() {
@@ -353,7 +348,7 @@ class Zume_Training_Extension {
                 $fields = [
                     "title" => $group['group_name'],
                     "zume_group_id" => $group['key'],
-                    "contact_count" => $group['members'],
+                    "member_count" => $group['members'],
                     "leader_count" => 1,
                     "start_date" => strtotime( $group['created_date'] ),
                     "status" => "in_progress",
@@ -367,13 +362,11 @@ class Zume_Training_Extension {
         }
 
         dt_write_log('Resync Transfer');
-//        dt_write_log($count);
         ?>
         <div class="notice notice-success is-dismissible">
             <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['transfer_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['transferred'] ) ?></p>
         </div>
         <?php
-
     }
 
     public function close_inactive_trainings() {
