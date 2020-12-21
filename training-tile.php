@@ -1,17 +1,75 @@
 <?php
 
-class Zume_Training_Extension_Hook {
+if ( !defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly.
+
+add_filter( 'dt_post_type_modules', function( $modules ){
+    $modules["trainings_zume"] = [
+        "name" => "Trainings - Zume Tile",
+        "enabled" => true,
+        "locked" => true,
+        "prerequisites" => [ "trainings_base", "contacts_base" ],
+        "post_type" => "trainings",
+        "description" => "Zume Tile Extension for Trainings"
+    ];
+    return $modules;
+}, 40, 1 );
+
+
+
+class Zume_Training_Extension_Hook extends DT_Module_Base {
+    private static $_instance = null;
+    public $post_type = "trainings";
+    public $module = "trainings_zume";
+
+    public static function instance() {
+        if ( is_null( self::$_instance ) ) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    } // End instance()
 
     public function __construct() {
-        add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
-        add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
-        add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
-        add_filter( 'dt_trainings_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
+        parent::__construct();
+        if ( !self::check_enabled_and_prerequisites() ){
+            return;
+        }
+        
+        add_filter( 'dt_custom_fields_settings', [ $this, 'dt_custom_fields_settings' ], 999, 2 );
+        add_filter( 'dt_details_additional_tiles', [ $this, 'dt_details_additional_tiles' ], 10, 2 );
+        add_action( 'dt_details_additional_section', [ $this, 'dt_details_additional_section' ], 20, 2 );
+
     }
 
-    public function training_detail_box( $section ) {
+    public function dt_custom_fields_settings( $fields, $post_type ) {
+        if ( 'trainings' === $post_type ) {
+            $fields['zume_public_key'] = [
+                'name' => "Zúme Public Key",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false,
+                'hidden' => true
+            ];
+            $fields['zume_group_id'] = [
+                'name' => "Group ID",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false,
+                'hidden' => true
+            ];
+        }
+        return $fields;
+    }
 
-        if ( 'zume_training_details' === $section ) :
+    public function dt_details_additional_tiles( $tiles, $post_type = "" ){
+        if ( $post_type === "trainings" ){
+            $tiles["zume_training_details"] = [ "label" => __( "Zume.Training Course", 'disciple_tools' ) ];
+        }
+        return $tiles;
+    }
+
+    public function dt_details_additional_section( $section, $post_type ) {
+
+        if ( 'trainings' === $post_type && 'zume_training_details' === $section ) :
 
             global $post;
             $post_meta = Zume_Training_Extension::get_meta( $post->ID );
@@ -23,7 +81,7 @@ class Zume_Training_Extension_Hook {
             // if public key but no group id
             else if ( ! empty( $post_meta['zume_public_key'] ) && empty( $post_meta['zume_group_id'] ) ) {
                 // get group id and add it
-                $zume_group_id = $this->get_group_id_by_key( $post_meta['zume_public_key'] );
+                $zume_group_id = $this->get_group_id_by_public_key( $post_meta['zume_public_key'] );
                 if ( $zume_group_id ) {
                     update_post_meta( $post->ID, 'zume_group_id', $zume_group_id );
                     $this->display_zume_group( $zume_group_id );
@@ -41,38 +99,6 @@ class Zume_Training_Extension_Hook {
 
     }
 
-    public function get_group_id_by_key( $zume_public_key ) {
-        global $wpdb;
-        return $wpdb->get_var( $wpdb->prepare( "SELECT meta_key FROM $wpdb->usermeta WHERE meta_value LIKE %s AND meta_key LIKE %s LIMIT 1", '%' . $wpdb->esc_like( $zume_public_key ) . '%', $wpdb->esc_like('zume_group' ) . '%' ) );
-    }
-
-    public function display_public_key_for_linking() {
-        global $post;
-        // show link form
-        $post_type = get_post_type();
-        $post_settings = apply_filters( "dt_get_post_type_settings", [], $post_type );
-        $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
-        ?>
-
-        <?php if ( get_post_meta( $post->ID, 'zume_public_key', true ) ) : ?>
-            <p>This current key was not found in connection to a Zúme Training group. Check again.</p>
-        <?php endif; ?>
-
-        <?php render_field_for_display( 'zume_public_key', $post_settings["fields"], $dt_post ) ?>
-
-        <script>
-            jQuery(document).ready(function(){
-                jQuery( document ).on( 'text-input-updated', function (e, newObject, id, val){
-                    console.log(id)
-                    if ( id === 'zume_public_key' ) {
-                        location.reload()
-                    }
-                })
-            })
-        </script>
-        <?php
-    }
-
     public function display_zume_group( $zume_group_id ) {
             $post_type = get_post_type();
             $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
@@ -81,7 +107,6 @@ class Zume_Training_Extension_Hook {
                 $this->display_public_key_for_linking();
             else: // if zume key matches
                 ?>
-                <label class="section-header"><?php esc_html_e( 'Zúme.Training Course' ) ?><button class="button clear small" id="unlink-zume-group">unlink</button></label>
                 <style>
                     #zume-tabs li a { padding: 1rem 1rem; }
                     .date-text {
@@ -309,8 +334,6 @@ class Zume_Training_Extension_Hook {
                     </div>
 
 
-
-
                     <!-- Raw Tab-->
                     <?php if ( user_can( get_current_user_id(), 'manage_dt' ) ) : ?>
                         <div class="tabs-panel" id="raw" >
@@ -326,60 +349,11 @@ class Zume_Training_Extension_Hook {
                         </div>
                     <?php endif;  // end Raw Tab ?>
                 </div>
+            <div class="center"><button class="button clear small" id="unlink-zume-group">unlink</button></div>
 
             <?php endif; // end has group id
     }
 
-    public function trainings_filter_box( $sections, $post_type = '' ) {
-        if ($post_type === "trainings") {
-            global $post;
-            if ( $post ) {
-                $sections[] = 'zume_training_details';
-            }
-        }
-        return $sections;
-    }
-
-    public function register_fields( $fields, $post_type ) {
-        if ( 'trainings' === $post_type ) {
-            $fields['zume_public_key'] = [
-                'name' => "Zúme Public Key",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-            $fields['zume_group_id'] = [
-                'name' => "Group ID",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-        }
-        if ( 'contacts' === $post_type ) {
-            $fields['zume_user_id'] = [
-                'name' => "Zume User ID",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-            $fields['zume_foreign_key'] = [
-                'name' => "Zume Foriegn Key",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-        }
-        return $fields;
-    }
-
-    /**
-     * @param $zume_group_id
-     * @return bool|array
-     */
     public function get_zume_group( $zume_group_id, $dt_post ) {
         global $wpdb;
         $raw_results = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s LIMIT 1", $zume_group_id ) );
@@ -448,22 +422,58 @@ class Zume_Training_Extension_Hook {
         }
     }
 
-    /**
-     * This removes unnecissary zume data from the get_trainings call loaded into the wpApiGroupsSettings javascript object
-     * @param $fields
-     *
-     * @return mixed
-     */
-    public function remove_zume_from_post_array( $fields ) {
-        if ( isset( $fields['zume_public_key'] ) ) {
-            unset( $fields['zume_public_key'] );
-        }
-        if ( isset( $fields['zume_group_id'] ) ) {
-            unset( $fields['zume_group_id'] );
-        }
-        return $fields;
+    public function get_group_id_by_public_key( $zume_public_key ) {
+        global $wpdb;
+        return $wpdb->get_var( $wpdb->prepare( "SELECT meta_key FROM $wpdb->usermeta WHERE meta_value LIKE %s AND meta_key LIKE %s LIMIT 1", '%' . $wpdb->esc_like( $zume_public_key ) . '%', $wpdb->esc_like('zume_group' ) . '%' ) );
     }
 
+    public function display_public_key_for_linking() {
+        global $post;
+        // show link form
+        $post_type = get_post_type();
+        $post_settings = apply_filters( "dt_get_post_type_settings", [], $post_type );
+        $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
+        ?>
+
+        <?php if ( get_post_meta( $post->ID, 'zume_public_key', true ) ) : ?>
+            <p>This current key was not found in connection to a Zúme Training group. Check again.</p>
+        <?php endif; ?>
+
+        <?php render_field_for_display( 'zume_public_key', $post_settings["fields"], $dt_post ) ?>
+
+        <script>
+            jQuery(document).ready(function(){
+                jQuery( document ).on( 'text-input-updated', function (e, newObject, id, val){
+                    console.log(id)
+                    if ( id === 'zume_public_key' ) {
+                        location.reload()
+                    }
+                })
+            })
+        </script>
+        <?php
+    }
+
+    //    public function trainings_filter_box( $sections, $post_type = '' ) {
+//        if ($post_type === "trainings") {
+//            global $post;
+//            if ( $post ) {
+//                $sections[] = 'zume_training_details';
+//            }
+//        }
+//        return $sections;
+//    }
+
+    //    public function remove_zume_from_post_array( $fields ) {
+//    // This removes unnecissary zume data from the get_trainings call loaded into the wpApiGroupsSettings javascript object
+//        if ( isset( $fields['zume_public_key'] ) ) {
+//            unset( $fields['zume_public_key'] );
+//        }
+//        if ( isset( $fields['zume_group_id'] ) ) {
+//            unset( $fields['zume_group_id'] );
+//        }
+//        return $fields;
+//    }
 
 }
-new Zume_Training_Extension_Hook();
+Zume_Training_Extension_Hook::instance();

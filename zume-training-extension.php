@@ -54,7 +54,7 @@ add_action( 'after_setup_theme', function (){
     }
     return false;
 
-}, 150 );
+}, 500 );
 
 
 /**
@@ -80,19 +80,22 @@ class Zume_Training_Extension {
      * @since   0.1.0
      */
     public function __construct() {
-        require_once ('cron.php' );
+//        require_once ('cron.php' );
+
 
         if ( function_exists( 'dt_get_url_path') ) {
             $url_path = dt_get_url_path();
 
+
             // load only on contact details page
-            if ( strpos( $url_path, 'contacts' ) !== false && is_single() ) {
+            if ( strpos( $url_path, 'contacts' ) !== false  ) {
                 require_once ('contact-tile.php' );
                 add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
             }
 
             // load only on training details page
-            if ( strpos( $url_path, 'trainings' ) !== false && is_single() ) {
+            if ( strpos( $url_path, 'trainings' ) !== false ) {
+                dt_write_log('here');
                 require_once ('training-tile.php' );
                 add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
             }
