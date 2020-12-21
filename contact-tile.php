@@ -1,15 +1,72 @@
 <?php
 
-class Zume_Contact_Extension_Hook {
+if ( !defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly.
+
+add_filter( 'dt_post_type_modules', function( $modules ){
+    $modules["contacts_zume"] = [
+        "name" => "Contacts - Zume Tile",
+        "enabled" => true,
+        "locked" => true,
+        "prerequisites" => [ "contacts_base" ],
+        "post_type" => "contacts",
+        "description" => "Zume Tile Extension for Contacts"
+    ];
+    return $modules;
+}, 40, 1 );
+
+class Zume_Contact_Extension_Hook extends DT_Module_Base {
+
+    private static $_instance = null;
+    public $post_type = "trainings";
+    public $module = "contacts_zume";
+
+    public static function instance() {
+        if ( is_null( self::$_instance ) ) {
+            self::$_instance = new self();
+        }
+        return self::$_instance;
+    } // End instance()
 
     public function __construct() {
-        add_action( 'dt_details_additional_section', [ $this, 'training_detail_box' ] );
-        add_filter( 'dt_details_additional_section_ids', [ $this, 'trainings_filter_box' ], 999, 2 );
-        add_filter( 'dt_custom_fields_settings', [ $this, 'register_fields' ], 999, 2 );
-        add_filter( 'dt_contact_fields_post_filter', [ $this, 'remove_zume_from_post_array' ], 999, 1 );
+        parent::__construct();
+        if ( !self::check_enabled_and_prerequisites() ){
+            return;
+        }
+
+        add_filter( 'dt_custom_fields_settings', [ $this, 'dt_custom_fields_settings' ], 999, 2 );
+        add_filter( 'dt_details_additional_tiles', [ $this, 'dt_details_additional_tiles' ], 60, 2 );
+        add_action( 'dt_details_additional_section', [ $this, 'dt_details_additional_section' ], 20, 2 );
+
     }
 
-    public function training_detail_box( $section ) {
+    public function dt_custom_fields_settings( $fields, $post_type ) {
+        if ( 'contacts' === $post_type ) {
+            $fields['zume_training_id'] = [
+                'name' => "Zume User ID",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false,
+                'hidden' => true
+            ];
+            $fields['zume_foreign_key'] = [
+                'name' => "Zume Foriegn Key",
+                'type' => 'text',
+                'default' => '',
+                'show_in_table' => false,
+                'hidden' => true
+            ];
+        }
+        return $fields;
+    }
+
+    public function dt_details_additional_tiles( $tiles, $post_type = "" ){
+        if ( "contacts" === $post_type ){
+            $tiles["zume_contact_details"] = [ "label" => __( "Zume.Training Course", 'disciple_tools' ) ];
+        }
+        return $tiles;
+    }
+
+    public function dt_details_additional_section( $section ) {
 
         if ( 'zume_contact_details' === $section ) :
 
@@ -75,12 +132,11 @@ class Zume_Contact_Extension_Hook {
 
     public function display_zume_user( $zume_training_id ) {
         $record = $this->get_zume_user( $zume_training_id );
-//    dt_write_log($record);
+
         if ( ! $record ) :
             $this->display_foreign_key_for_linking();
         else: // if zume key matches
             ?>
-            <label class="section-header"><?php esc_html_e( 'Zúme.Training' ) ?><button class="button clear small" id="unlink-zume-group">unlink</button></label>
             <style>
                 #zume-tabs li a { padding: 1rem 1rem; }
                 .date-text {
@@ -110,8 +166,6 @@ class Zume_Contact_Extension_Hook {
             </script>
 
             <div class="tabs-content" data-tabs-content="zume-tabs">
-
-
 
                 <!-- Info box -->
                 <div class="tabs-panel is-active" id="info" style="min-height: 300px; vertical-align: top;">
@@ -213,6 +267,7 @@ class Zume_Contact_Extension_Hook {
                     </div>
                 <?php endif;  // end Raw Tab ?>
             </div>
+        <div class="center"><button class="button clear small" id="unlink-zume-group">unlink</button></div>
 
         <?php endif; // end has group id
     }
@@ -381,36 +436,6 @@ class Zume_Contact_Extension_Hook {
         return wp_parse_args( $args, $defaults );
     }
 
-    public function trainings_filter_box( $sections, $post_type = '' ) {
-        if ($post_type === "contacts") {
-            global $post;
-            if ( $post ) {
-                $sections[] = 'zume_contact_details';
-            }
-        }
-        return $sections;
-    }
-
-    public function register_fields( $fields, $post_type ) {
-        if ( 'contacts' === $post_type ) {
-            $fields['zume_training_id'] = [
-                'name' => "Zume User ID",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-            $fields['zume_foreign_key'] = [
-                'name' => "Zume Foriegn Key",
-                'type' => 'text',
-                'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
-            ];
-        }
-        return $fields;
-    }
-
     /**
      * @param $zume_training_id
      * @return bool|array
@@ -425,25 +450,5 @@ class Zume_Contact_Extension_Hook {
         }
     }
 
-    /**
-     * This removes unnecissary zume data from the get_trainings call loaded into the wpApiGroupsSettings javascript object
-     * @param $fields
-     *
-     * @return mixed
-     */
-    public function remove_zume_from_post_array( $fields ) {
-        if ( isset( $fields['zume_training_id'] ) ) {
-            unset( $fields['zume_training_id'] );
-        }
-        if ( isset( $fields['zume_foreign_key'] ) ) {
-            unset( $fields['zume_foreign_key'] );
-        }
-        if ( isset( $fields['zume_raw_record'] ) ) {
-            unset( $fields['zume_raw_record'] );
-        }
-        return $fields;
-    }
-
-
 }
-new Zume_Contact_Extension_Hook();
+Zume_Contact_Extension_Hook::instance();
