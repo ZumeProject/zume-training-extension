@@ -76,6 +76,13 @@ class Zume_Contact_Extension_Hook extends DT_Module_Base {
             // if no public key or group id
             if ( empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_training_id'] ) ) {
                 $this->display_foreign_key_for_linking();
+                ?>
+                <script>
+                    jQuery(document).ready(function(){
+                        jQuery('#zume_contact_details').hide()
+                    })
+                </script>
+                <?php
             }
             // if public key but no group id
             else if ( ! empty( $post_meta['zume_foreign_key'] ) && empty( $post_meta['zume_training_id'] ) ) {
@@ -135,6 +142,7 @@ class Zume_Contact_Extension_Hook extends DT_Module_Base {
 
         if ( ! $record ) :
             $this->display_foreign_key_for_linking();
+
         else: // if zume key matches
             ?>
             <style>
