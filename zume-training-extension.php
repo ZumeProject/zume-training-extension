@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Zúme Training Extension of Disciple Tools
+ * Plugin Name: Zúme - Training Extension for Disciple Tools
  * Plugin URI: https://github.com/DiscipleTools/disciple-tools-one-page-extension
  * Description: One page extension of Disciple Tools Training plugin to include Zúme specific training data.
  * Version:  0.2
@@ -20,7 +20,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly
 
 add_action( 'after_setup_theme', function (){
-    $required_dt_theme_version = '0.22.0';
+    $required_dt_theme_version = '1.0';
     $wp_theme = wp_get_theme();
     $version = $wp_theme->version;
     /*
