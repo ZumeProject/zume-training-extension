@@ -163,7 +163,7 @@ class Zume_Contact_Extension_Hook extends DT_Module_Base {
             <script>
                 jQuery(document).ready(function() {
                     jQuery('#zume-tabs').on('change.zf.tabs', function() {
-                        console.log('test')
+
                         jQuery('.grid').masonry({
                             itemSelector: '.grid-item',
                             percentPosition: true

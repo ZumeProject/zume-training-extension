@@ -367,9 +367,9 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 );
                 wp_update_post( $my_post );
             }
-            if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
-                update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
-            }
+//            if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
+//                update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
+//            }
             if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
                 update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
             }

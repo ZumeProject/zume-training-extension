@@ -353,7 +353,7 @@ class Zume_Training_Extension {
                     "zume_group_id" => $group['key'],
                     "member_count" => $group['members'],
                     "leader_count" => 1,
-                    "start_date" => strtotime( $group['created_date'] ),
+//                    "start_date" => strtotime( $group['created_date'] ),
                     "status" => "in_progress",
                 ];
                 DT_Posts::create_post( 'trainings', $fields, true, false );
