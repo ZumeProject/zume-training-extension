@@ -392,7 +392,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 if ( $new_hash !== $zume_location_grid_meta && ! empty( $results['location_grid_meta']['lng'] ) ) {
 
                     if ( $zume_location_grid_meta !== null && isset( $dt_post['location_grid_meta'] ) ) { // remove previous address and replace with current address
-                        Location_Grid_Meta::add_location_grid_meta( $dt_post['ID'], 'all', 0 );
+                        Location_Grid_Meta::add_location_grid_meta( $dt_post['ID'], $dt_post['location_grid_meta'] );
                         delete_post_meta( $dt_post['ID'], 'zume_location_grid_meta' );
                     }
 
@@ -453,27 +453,6 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
         </script>
         <?php
     }
-
-    //    public function trainings_filter_box( $sections, $post_type = '' ) {
-//        if ($post_type === "trainings") {
-//            global $post;
-//            if ( $post ) {
-//                $sections[] = 'zume_training_details';
-//            }
-//        }
-//        return $sections;
-//    }
-
-    //    public function remove_zume_from_post_array( $fields ) {
-//    // This removes unnecissary zume data from the get_trainings call loaded into the wpApiGroupsSettings javascript object
-//        if ( isset( $fields['zume_public_key'] ) ) {
-//            unset( $fields['zume_public_key'] );
-//        }
-//        if ( isset( $fields['zume_group_id'] ) ) {
-//            unset( $fields['zume_group_id'] );
-//        }
-//        return $fields;
-//    }
 
 }
 Zume_Training_Extension_Hook::instance();
