@@ -95,7 +95,6 @@ class Zume_Training_Extension {
 
             // load only on training details page
             if ( strpos( $url_path, 'trainings' ) !== false ) {
-                dt_write_log('here');
                 require_once ('training-tile.php' );
                 add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
             }
