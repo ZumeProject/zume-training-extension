@@ -80,22 +80,21 @@ class Zume_Training_Extension {
      * @since   0.1.0
      */
     public function __construct() {
-//        require_once ('cron.php' );
+        require_once ('cron.php' );
 
+        require_once ('contact-tile.php' );
+        require_once ('training-tile.php' );
 
         if ( function_exists( 'dt_get_url_path') ) {
             $url_path = dt_get_url_path();
 
-
             // load only on contact details page
             if ( strpos( $url_path, 'contacts' ) !== false  ) {
-                require_once ('contact-tile.php' );
                 add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
             }
 
             // load only on training details page
             if ( strpos( $url_path, 'trainings' ) !== false ) {
-                require_once ('training-tile.php' );
                 add_action( 'wp_enqueue_scripts', [ $this, 'scripts' ], 999 );
             }
 
@@ -107,6 +106,7 @@ class Zume_Training_Extension {
 
 
     } // End __construct()
+
 
     public function scripts() {
         wp_enqueue_script( 'zume-training', plugin_dir_url(__FILE__) . 'zume-training.js', array( 'jquery' ), filemtime( plugin_dir_path(__FILE__) . '/zume-training.js' ), true );
@@ -272,12 +272,11 @@ class Zume_Training_Extension {
         global $wpdb;
         $trainings_in_global = $wpdb->get_results( "SELECT post_id, meta_value as zume_group_id FROM $wpdb->postmeta WHERE meta_key = 'zume_group_id'", ARRAY_A );
 
-
         $count = [
             "total" => 0,
             "check_needed" => 0,
             "checked" => 0,
-            "checked_list" => get_transient( __METHOD__ ),
+            "checked_list" => [], //get_transient( __METHOD__ ),
         ];
         $count['total'] = count($trainings_in_global);
         if ( $count['checked_list'] === false ) {
@@ -295,7 +294,7 @@ class Zume_Training_Extension {
                     continue;
                 }
 
-                $dt_post = DT_Posts::get_post( 'trainings', $row['post_id'] );
+                $dt_post = DT_Posts::get_post( 'trainings', $row['post_id'], false, false );
                 $obj->get_zume_group( $row['zume_group_id'], $dt_post );
 
                 $count['checked']++;
@@ -303,7 +302,7 @@ class Zume_Training_Extension {
                 $i++;
             }
         }
-        set_transient( __METHOD__, $count['checked_list'], 3600 );
+//        set_transient( __METHOD__, $count['checked_list'], 3600 );
 
         dt_write_log($count);
 
@@ -330,7 +329,8 @@ class Zume_Training_Extension {
             "total" => 0,
             "transfer_needed" => 0,
             "transferred" => 0,
-            "transfer_names" => []
+            "transfer_names" => [],
+            'results' => []
         ];
         $count['total'] = count($groups_in_zt);
 
@@ -338,11 +338,11 @@ class Zume_Training_Extension {
         $i = 0;
         foreach( $groups_in_zt as $item ) {
             if ( !isset( $trainings[$item] ) ) {
-
                 if ( $i > 100 ) { // set limit on number of records per sync. keep from timing out.
                     $count['transfer_needed']++;
                     continue;
                 }
+
                 $group = $wpdb->get_var( $wpdb->prepare( "SELECT meta_value FROM $wpdb->usermeta WHERE meta_key = %s", $item ) );
                 $group = maybe_unserialize( $group );
 
@@ -352,10 +352,9 @@ class Zume_Training_Extension {
                     "zume_group_id" => $group['key'],
                     "member_count" => $group['members'],
                     "leader_count" => 1,
-//                    "start_date" => strtotime( $group['created_date'] ),
                     "status" => "in_progress",
                 ];
-                DT_Posts::create_post( 'trainings', $fields, true, false );
+                $count['results'][] = DT_Posts::create_post( 'trainings', $fields, true, false );
 
                 $count['transferred']++;
                 $count['transfer_names'][] = $group['group_name'];
@@ -363,7 +362,6 @@ class Zume_Training_Extension {
             }
         }
 
-        dt_write_log('Resync Transfer');
         ?>
         <div class="notice notice-success is-dismissible">
             <p>Total Groups: <?php echo esc_html( $count['total'] ) ?> | Transfers Still Needed: <?php echo esc_html( $count['transfer_needed'] ) ?> | Transfers Completed: <?php echo esc_html( $count['transferred'] ) ?></p>
