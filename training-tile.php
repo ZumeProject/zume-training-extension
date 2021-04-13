@@ -385,6 +385,10 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
             if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
                 update_post_meta( $dt_post['ID'], 'leader_count', 1 );
             }
+            if ( get_current_user_id() === $results['owner'] && ( ! isset( $dt_post['assigned_to'] ) || empty( $dt_post['assigned_to'] ) ) ) {
+                update_post_meta( $dt_post['ID'], 'assigned_to', 'user-'.$results['owner'] );
+            }
+
 
             if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) { // does the ztraining have a location set
 
