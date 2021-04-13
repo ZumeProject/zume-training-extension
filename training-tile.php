@@ -47,7 +47,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 'type' => 'text',
                 'default' => '',
                 'tile' => 'zume_training_details',
-                'show_in_table' => true,
+                'show_in_table' => false,
             ];
             $fields['zume_group_id'] = [
                 'name' => "Group ID",
@@ -379,11 +379,11 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
 //            if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
 //                update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
 //            }
-            if ( ! ( isset( $dt_post['members'] ) && $dt_post['members'] === $results['members'] )  /* test if number of members same */) {
-                update_post_meta( $dt_post['ID'], 'members', $results['members'] );
+            if ( ! ( isset( $dt_post['member_count'] ) && $dt_post['member_count'] === $results['members'] )  /* test if number of members same */) {
+                update_post_meta( $dt_post['ID'], 'member_count', $results['members'] );
             }
-            if ( ! ( isset( $dt_post['leaders'] ) && $dt_post['leaders'] < 1 ) /* test if leader has at least the count of one */) {
-                update_post_meta( $dt_post['ID'], 'leaders', 1 );
+            if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
+                update_post_meta( $dt_post['ID'], 'leader_count', 1 );
             }
 
             if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) { // does the ztraining have a location set

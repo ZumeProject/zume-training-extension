@@ -350,10 +350,17 @@ class Zume_Training_Extension {
                 $fields = [
                     "title" => $group['group_name'],
                     "zume_group_id" => $group['key'],
+                    "zume_public_key" => $group['public_key'],
                     "member_count" => $group['members'],
                     "leader_count" => 1,
                     "status" => "in_progress",
                 ];
+
+                if ( get_user_meta( $group['owner'], 'wp_3_corresponds_to_contact', true ) ) {
+                    $fields['assigned_to'] = $group['owner'];
+                }
+
+
                 $count['results'][] = DT_Posts::create_post( 'trainings', $fields, true, false );
 
                 $count['transferred']++;
