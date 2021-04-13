@@ -46,8 +46,8 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 'name' => "Zúme Public Key",
                 'type' => 'text',
                 'default' => '',
-                'show_in_table' => false,
-                'hidden' => true
+                'tile' => 'zume_training_details',
+                'show_in_table' => true,
             ];
             $fields['zume_group_id'] = [
                 'name' => "Group ID",
@@ -90,8 +90,17 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 }
             }
             // if group id
-            else if ( ! empty( $post_meta['zume_group_id'] ) ) {
+            else if ( empty( $post_meta['zume_public_key'] ) && ! empty( $post_meta['zume_group_id'] ) ) {
                 // then query by group id
+                $post_type = get_post_type();
+                $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
+                $record = $this->get_zume_group( $post_meta['zume_group_id'], $dt_post );
+
+                update_post_meta( $post->ID, 'zume_public_key', $record['public_key'] );
+
+                $this->display_zume_group( $post_meta['zume_group_id'] );
+            }
+            else if ( ! empty( $post_meta['zume_public_key'] ) && ! empty( $post_meta['zume_group_id'] ) ) {
                 $this->display_zume_group( $post_meta['zume_group_id'] );
             }
 
@@ -370,11 +379,11 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
 //            if ( ! ( isset( $dt_post['start_date']['timestamp'] ) && ( date( "Y-m-d", strtotime( $dt_post['start_date']['timestamp'] ) ) === date( "Y-m-d", strtotime( $results['created_date'] ) ) ) ) /* test if title start date is same */) {
 //                update_post_meta( $dt_post['ID'], 'start_date', strtotime( $results['created_date'] ) );
 //            }
-            if ( ! ( isset( $dt_post['contact_count'] ) && $dt_post['contact_count'] === $results['members'] )  /* test if number of members same */) {
-                update_post_meta( $dt_post['ID'], 'contact_count', $results['members'] );
+            if ( ! ( isset( $dt_post['members'] ) && $dt_post['members'] === $results['members'] )  /* test if number of members same */) {
+                update_post_meta( $dt_post['ID'], 'members', $results['members'] );
             }
-            if ( ! ( isset( $dt_post['leader_count'] ) && $dt_post['leader_count'] < 1 ) /* test if leader has at least the count of one */) {
-                update_post_meta( $dt_post['ID'], 'leader_count', 1 );
+            if ( ! ( isset( $dt_post['leaders'] ) && $dt_post['leaders'] < 1 ) /* test if leader has at least the count of one */) {
+                update_post_meta( $dt_post['ID'], 'leaders', 1 );
             }
 
             if ( isset( $results['location_grid_meta'] ) && ! empty( $results['location_grid_meta'] ) ) { // does the ztraining have a location set
@@ -429,9 +438,8 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
 
     public function display_public_key_for_linking() {
         global $post;
-        // show link form
         $post_type = get_post_type();
-        $post_settings = apply_filters( "dt_get_post_type_settings", [], $post_type );
+        $post_settings = DT_Posts::get_post_field_settings( $post_type );
         $dt_post = DT_Posts::get_post( $post_type, get_the_ID() );
         ?>
 
@@ -439,7 +447,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
             <p>This current key was not found in connection to a Zúme Training group. Check again.</p>
         <?php endif; ?>
 
-        <?php render_field_for_display( 'zume_public_key', $post_settings["fields"], $dt_post ) ?>
+<!--        --><?php //render_field_for_display( "zume_public_key", $post_settings, $dt_post ); ?>
 
         <script>
             jQuery(document).ready(function(){
