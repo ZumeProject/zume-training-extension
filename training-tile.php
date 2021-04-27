@@ -332,7 +332,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
 
                     <!-- Members Tab-->
                     <div class="tabs-panel" id="members" style="min-height: 500px;vertical-align: top;">
-                        <dl>
+                        <dl style="width:100%;height: 500px;overflow-y: scroll;overflow-x:hidden;">
                             <dt><strong>MEMBERS DETAILS<hr></strong></dt>
                             <?php if ( ! empty( $record['coleaders'] ) ) { ?>
                                 <?php foreach ( $record['coleaders'] as $coleader ) : ?>
