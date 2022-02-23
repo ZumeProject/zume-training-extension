@@ -45,14 +45,8 @@ add_action( 'after_setup_theme', function (){
     if ( !defined( 'DT_FUNCTIONS_READY' ) ){
         require_once get_template_directory() . '/dt-core/global-functions.php';
     }
-    /*
-     * Don't load the plugin on every rest request. Only those with the 'sample' namespace
-     */
-    $is_rest = dt_is_rest();
-    if ( !$is_rest || strpos( dt_get_url_path(), 'trainings' ) != false ){
-        return Zume_Training_Extension::instance();
-    }
-    return false;
+
+    return Zume_Training_Extension::instance();
 
 }, 500 );
 

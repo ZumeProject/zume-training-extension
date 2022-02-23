@@ -17,7 +17,7 @@ add_filter( 'dt_post_type_modules', function( $modules ){
 class Zume_Contact_Extension_Hook extends DT_Module_Base {
 
     private static $_instance = null;
-    public $post_type = "trainings";
+//    public $post_type = "trainings";
     public $module = "contacts_zume";
 
     public static function instance() {
@@ -41,6 +41,13 @@ class Zume_Contact_Extension_Hook extends DT_Module_Base {
 
     public function dt_custom_fields_settings( $fields, $post_type ) {
         if ( 'contacts' === $post_type ) {
+            if ( isset( $fields["overall_status"] ) && !isset( $fields["overall_status"]["default"]["registered_only"] ) ) {
+                $fields["overall_status"]["default"]["registered_only"] = [
+                    'label' => 'Registered Only',
+                    'description' => 'Contact is a Zume.Training registered person.',
+                    'color' => '#F43636'
+                ];
+            }
             $fields['zume_training_id'] = [
                 'name' => "Zume User ID",
                 'type' => 'text',
@@ -66,10 +73,9 @@ class Zume_Contact_Extension_Hook extends DT_Module_Base {
         return $tiles;
     }
 
-    public function dt_details_additional_section( $section ) {
+    public function dt_details_additional_section( $section, $post_type ) {
 
-        if ( 'zume_contact_details' === $section ) :
-
+        if ( 'zume_contact_details' === $section && $post_type === 'contacts' ) :
             global $post;
             $post_meta = Zume_Training_Extension::get_meta( $post->ID );
 
