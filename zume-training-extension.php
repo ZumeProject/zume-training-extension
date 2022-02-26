@@ -471,6 +471,10 @@ class Zume_Training_Extension {
         <?php
     }
 
+    public function install_completed_trainings() {
+
+    }
+
     public function is_valid_timeStamp($timestamp)
     {
         return ((string) (int) $timestamp === $timestamp)

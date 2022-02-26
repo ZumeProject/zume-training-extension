@@ -37,7 +37,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
         add_filter( 'dt_custom_fields_settings', [ $this, 'dt_custom_fields_settings' ], 999, 2 );
         add_filter( 'dt_details_additional_tiles', [ $this, 'dt_details_additional_tiles' ], 10, 2 );
         add_action( 'dt_details_additional_section', [ $this, 'dt_details_additional_section' ], 20, 2 );
-
+        add_filter( "dt_user_list_filters", [ $this, "dt_user_list_filters" ], 10, 2 );
     }
 
     public function dt_custom_fields_settings( $fields, $post_type ) {
@@ -56,6 +56,67 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                 'show_in_table' => false,
                 'hidden' => true
             ];
+
+            $fields["zume_sessions"] = [
+                'name' => __( 'Completed', 'disciple-tools' ),
+                'description' => __( "The Zúme Sessions completed.", 'disciple_tools' ),
+                'type' => 'multi_select',
+                'default' => [
+                    'session_1' => [
+                        'label' => __( 'Session 1', 'disciple_tools' ),
+                        'description' => _x( 'Session 1.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/coach.svg?v=2'
+                    ],
+                    'session_2' => [
+                        'label' => __( 'Session 2', 'disciple_tools' ),
+                        'description' => _x( 'Session 2.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_3' => [
+                        'label' => __( 'Session 3', 'disciple_tools' ),
+                        'description' => _x( 'Session 3.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_4' => [
+                        'label' => __( 'Session 4', 'disciple_tools' ),
+                        'description' => _x( 'Session 4.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_5' => [
+                        'label' => __( 'Session 5', 'disciple_tools' ),
+                        'description' => _x( 'Session 5.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_6' => [
+                        'label' => __( 'Session 6', 'disciple_tools' ),
+                        'description' => _x( 'Session 6.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_7' => [
+                        'label' => __( 'Session 7', 'disciple_tools' ),
+                        'description' => _x( 'Session 7.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_8' => [
+                        'label' => __( 'Session 8', 'disciple_tools' ),
+                        'description' => _x( 'Session 8.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_9' => [
+                        'label' => __( 'Session 9', 'disciple_tools' ),
+                        'description' => _x( 'Session 9.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                    'session_10' => [
+                        'label' => __( 'Session 10', 'disciple_tools' ),
+                        'description' => _x( 'Session 10.', 'field description', 'disciple_tools' ),
+                        "icon" => get_template_directory_uri() . '/dt-assets/images/group-peer.svg?v=2'
+                    ],
+                ],
+                "tile" => "zume_sessions",
+                "in_create_form" => true,
+                'icon' => get_template_directory_uri() . "/dt-assets/images/sign-post.svg?v=2",
+            ];
         }
         return $fields;
     }
@@ -63,6 +124,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
     public function dt_details_additional_tiles( $tiles, $post_type = "" ){
         if ( $post_type === "trainings" ){
             $tiles["zume_training_details"] = [ "label" => __( "Zume.Training Course", 'disciple_tools' ) ];
+            $tiles["zume_sessions"] = [ "label" => __( "Sessions", 'disciple_tools' ) ];
         }
         return $tiles;
     }
@@ -106,6 +168,139 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
 
         endif; // End test if section zume_training
 
+    }
+
+    public function dt_user_list_filters( $filters, $post_type ){
+        if ( $post_type === $this->post_type ){
+
+            $fields = DT_Posts::get_post_field_settings( $post_type );
+            if ( isset( $fields["zume_sessions"] ) ) {
+                if ( current_user_can( 'dt_all_admin_' . $this->post_type ) ){
+                    $counts = self::get_all_status_types();
+                    $status_counts = [];
+                    $total_all = 0;
+                    foreach ( $counts as $count ){
+                        $total_all += $count["count"];
+                        dt_increment( $status_counts[$count["status"]], $count["count"] );
+                    }
+                    $filters["tabs"][] = [
+                        "key" => "zume_sessions",
+                        "label" => __( "Zúme Sessions", 'disciple-tools' ),
+                        "order" => 20
+                    ];
+                    foreach ( $fields["zume_sessions"]["default"] as $status_key => $status_value ) {
+                        if ( isset( $status_counts[$status_key] ) ){
+                            $filters["filters"][] = [
+                                "ID" => 'all_' . $status_key,
+                                "tab" => 'zume_sessions',
+                                "name" => $status_value["label"],
+                                "query" => [
+                                    'zume_sessions' => [ $status_key ],
+                                    'sort' => '-post_date'
+                                ],
+                                "count" => $status_counts[$status_key]
+                            ];
+                        }
+                    }
+                }
+                else {
+                    $counts = self::get_my_status();
+                    /**
+                     * Setup my filters
+                     */
+                    $active_counts = [];
+                    $status_counts = [];
+                    $total_my = 0;
+                    foreach ( $counts as $count ){
+                        $total_my += $count["count"];
+                        dt_increment( $status_counts[$count["status"]], $count["count"] );
+                        if ( $count["status"] === "active" ){
+                            dt_increment( $active_counts[$count["status"]], $count["count"] );
+                        }
+                    }
+
+                    $filters["tabs"][] = [
+                        "key" => "assigned_to_me",
+                        "label" => __( "Zúme Sessions", 'disciple-tools' ),
+                        "order" => 20
+                    ];
+                    foreach ( $fields["zume_sessions"]["default"] as $status_key => $status_value ) {
+                        if ( isset( $status_counts[$status_key] ) ){
+                            $filters["filters"][] = [
+                                "ID" => 'my_' . $status_key,
+                                "tab" => 'assigned_to_me',
+                                "name" => $status_value["label"],
+                                "query" => [
+                                    'assigned_to' => [ 'me' ],
+                                    'zume_sessions' => [ $status_key ],
+                                    'sort' => '-post_date'
+                                ],
+                                "count" => $status_counts[$status_key]
+                            ];
+                        }
+                    }
+                } // if has permissions
+            } // if leadership_milestones exists
+        }
+        return $filters;
+    }
+
+
+    public function get_my_status(){
+        /**
+         * @todo adjust query to return count for update needed
+         */
+        global $wpdb;
+        $post_type = $this->post_type;
+        $current_user = get_current_user_id();
+
+        $results = $wpdb->get_results( $wpdb->prepare( "
+            SELECT pm.meta_value as status, count(pm.post_id) as count
+             FROM $wpdb->postmeta pm
+            INNER JOIN $wpdb->posts a ON ( a.ID = pm.post_id AND a.post_type = %s and a.post_status = 'publish' )
+            INNER JOIN $wpdb->postmeta as assigned_to ON pm.post_id=assigned_to.post_id
+                          AND assigned_to.meta_key = 'assigned_to'
+                          AND assigned_to.meta_value = CONCAT( 'user-', %s )
+            WHERE pm.meta_key = 'zume_sessions'
+            GROUP BY pm.meta_value
+        ", $post_type, $current_user ), ARRAY_A);
+
+//        dt_write_log(__METHOD__);
+//        dt_write_log($results);
+
+        return $results;
+    }
+
+    //list page filters function
+    public function get_all_status_types(){
+        /**
+         * @todo adjust query to return count for update needed
+         */
+        global $wpdb;
+        if ( current_user_can( 'dt_all_admin_'.$this->post_type ) ){
+            $results = $wpdb->get_results($wpdb->prepare( "
+                SELECT pm.meta_value as status, count(pm.post_id) as count
+                 FROM $wpdb->postmeta pm
+                INNER JOIN $wpdb->posts a ON ( a.ID = pm.post_id AND a.post_type = %s and a.post_status = 'publish' )
+                WHERE pm.meta_key = 'zume_sessions'
+                GROUP BY pm.meta_value
+            ", $this->post_type  ), ARRAY_A );
+        } else {
+            $results = $wpdb->get_results($wpdb->prepare("
+                SELECT status.meta_value as status, count(pm.post_id) as count
+                FROM $wpdb->postmeta pm
+                INNER JOIN $wpdb->postmeta status ON( status.post_id = pm.post_id AND status.meta_key = 'zume_sessions' )
+                INNER JOIN $wpdb->posts a ON( a.ID = pm.post_id AND a.post_type = %s and a.post_status = 'publish' )
+                LEFT JOIN $wpdb->dt_share AS shares ON ( shares.post_id = a.ID AND shares.user_id = %s )
+                LEFT JOIN $wpdb->postmeta assigned_to ON ( assigned_to.post_id = pm.post_id AND assigned_to.meta_key = 'assigned_to' && assigned_to.meta_value = %s )
+                WHERE ( shares.user_id IS NOT NULL OR assigned_to.meta_value IS NOT NULL )
+                GROUP BY status.meta_value, pm.meta_value
+            ", $this->post_type, get_current_user_id(), 'user-' . get_current_user_id() ), ARRAY_A);
+        }
+//        dt_write_log(__METHOD__);
+//        dt_write_log($results);
+
+        return $results;
     }
 
     public function display_zume_group( $zume_group_id ) {
