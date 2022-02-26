@@ -498,7 +498,6 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                                 <?php echo esc_html( $user->data->display_name ) ?><br>
                                 <?php echo esc_html( $user->data->user_email ) ?>
                                 <br>
-                                <button class="button hollow small" disabled>Create Contact</button>
                             </dd>
 
                             <dt>Owner's Other Groups</dt>
@@ -531,7 +530,7 @@ class Zume_Training_Extension_Hook extends DT_Module_Base {
                             <dt><strong>MEMBERS DETAILS<hr></strong></dt>
                             <?php if ( ! empty( $record['coleaders'] ) ) { ?>
                                 <?php foreach ( $record['coleaders'] as $coleader ) : ?>
-                                    <dd><?php echo esc_html( $coleader ) ?><br><button class="button hollow small" disabled>Create Contact</button></dd>
+                                    <dd><?php echo esc_html( $coleader ) ?></dd>
                                 <?php endforeach; ?>
                            <?php } ?>
                         </dl>
