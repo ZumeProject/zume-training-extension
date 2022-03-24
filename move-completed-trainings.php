@@ -3,15 +3,12 @@ if ( !defined( 'ABSPATH' ) ) { exit; } // Exit if accessed directly.
 
 class Zume_Move_Completed_Trainings {
     public static function check_for_groups_ready_to_move() {
-        // @todo query and test for groups needing to be moved
-            //
 
-        global $wpdb;
-        $results = $wpdb->get_results(
-            "
-            
-            "
-            , ARRAY_A );
+        $groups = self::query_completed_groups();
+        $transferred_trainings = self::query_trainings_list();
+
+
+
     }
 
     public static function add_sessions(){
@@ -98,4 +95,41 @@ class Zume_Move_Completed_Trainings {
             }
         }
     }
+
+    public static function query_completed_groups() {
+        global $wpdb;
+        $r = $wpdb->get_results(
+            "
+            SELECT user_id, meta_key as group_key, meta_value
+                    FROM wp_usermeta 
+                    WHERE meta_key LIKE 'zume_group_%'
+                    AND ( meta_value LIKE '%\"session_9\";b:1%' OR meta_value LIKE '%\"session_10\";b:1%' );
+            "
+            , ARRAY_A );
+
+        if ( ! is_wp_error ( $r ) ) {
+            return $r;
+        }
+        return [];
+    }
+
+    public static function query_trainings_list() {
+        global $wpdb;
+        $r = $wpdb->get_results(
+            "
+            SELECT meta_value as group_key FROM wp_3_postmeta WHERE meta_key = 'zume_group_id'
+            "
+            , ARRAY_A );
+
+        $d = [];
+        if ( ! is_wp_error ( $r ) ) {
+            foreach( $r as $v ) {
+                $d[$v] = $v;
+            }
+            return $d;
+        }
+        return [];
+
+    }
+
 }
